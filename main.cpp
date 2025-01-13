@@ -1,10 +1,8 @@
 #include "image/image.h"
-#include "cpu/grayscale.h"
-#include "gpu/grayscale.cuh"
+#include "processing/processor.h"
 #include <iostream>
 #include <string>
 
-using namespace fast_img_proc;
 
 int main(int argc, char* argv[]) {
     if (argc < 5) {
@@ -21,6 +19,14 @@ int main(int argc, char* argv[]) {
 
     try {
         Image input_img(inputPath);
+        std::string::size_type const p(outputPath.find_last_of('.'));
+        const auto ext = outputPath.substr(outputPath.find_last_of('.') + 1);
+        std::string output_filename_noext = outputPath.substr(0, p);
+        std::string output_path_auto = output_filename_noext + "_auto." + ext;
+        std::string output_path_cpu = output_filename_noext + "_cpu." + ext;
+        std::string output_path_gpu = output_filename_noext + "_gpu." + ext;        
+        
+
         std::cout << "Loaded image: " << input_img.width() << "x" << input_img.height() << "\n";
 
         std::cout<<"Before Image processed initialized" << std::endl;
@@ -28,26 +34,19 @@ int main(int argc, char* argv[]) {
         if (operation == "grayscale") {
             std::cout<<"Operation selected: grayscale." << std::endl;
 
-            if (backend_str == "gpu"){
+            // Automatic hardware selection
+            auto processed_img_auto = processing::grayscale(input_img);
+            processed_img_auto.save(output_path_auto);
 
-                #ifdef USE_CUDA
-                if (gpu::is_available()) {
-                    std::cout << "Using CUDA GPU implementation\n";
-                    auto processed_img = gpu::grayscale(input_img);
-                    processed_img.save(outputPath);
-                }
-                #endif 
-            }
-            else {
-                
-                    std::cout << "Using CPU implementation\n";
-                    auto processed_img = cpu::grayscale(input_img);
-                    processed_img.save(outputPath);
-                    std::cout << "Processed image saved to " << outputPath << "\n";
-            }
+            // Force CPU
+            auto processed_img_cpu = processing::grayscale(input_img, processing::Hardware::CPU);
+            processed_img_cpu.save(output_path_cpu);
+
+            // Try GPU (will fall back to CPU if CUDA unavailable)
+            auto processed_img_gpu = processing::grayscale(input_img, processing::Hardware::GPU);
+            processed_img_gpu.save(output_path_gpu);
 
         }
-        
         else {
             std::cerr << "Unknown operation: " << operation << "\n";
             return 1;
