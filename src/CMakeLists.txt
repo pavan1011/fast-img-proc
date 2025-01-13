@@ -1,6 +1,7 @@
 add_library(image_lib
     image/image.cpp
     cpu/grayscale.cpp
+    processing/processor.cpp
 )
 
 target_include_directories(image_lib

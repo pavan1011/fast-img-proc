@@ -1,18 +1,14 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
-#include <cstdint>
 #include <string>
 #include <memory>
 #include <vector>
 
-
-namespace fast_img_proc {
-
 class Image {
 public:
     Image(const std::string& filepath);
-    Image(int width, int height, int channels);
+    Image(uint32_t width, uint32_t height, uint8_t channels);
     ~Image();
 
     // Enable move
@@ -39,7 +35,5 @@ private:
     uint8_t m_channels{0};
     std::unique_ptr<unsigned char[]> m_data;
 };
-
-} // namespace fast_img_proc
 
 #endif // IMAGE_H
