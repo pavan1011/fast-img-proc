@@ -20,11 +20,6 @@ endif()
 #TODO: Make TBB Optional. Fallback to sequential execution if TBB is not installed.
 find_package(TBB REQUIRED)
 
-# Find Python and nanobind for bindings
-find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
-find_package(nanobind CONFIG REQUIRED)
-
-
 add_subdirectory(src)
 
 # Create main executable
