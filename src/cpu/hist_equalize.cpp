@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <execution>
 #include <cmath>
+#include <iostream>
 
 namespace cpu {
     Image rgb_to_ycrcb(const Image& input) {
@@ -35,7 +36,7 @@ namespace cpu {
                 out_data[pixel + 1] = static_cast<unsigned char>(std::clamp(cr, 0.0f, 255.0f));
                 out_data[pixel + 2] = static_cast<unsigned char>(std::clamp(cb, 0.0f, 255.0f));
             });
-
+        std::cout << "RGB to YCrCb done." << std::endl;
         return output;
     }
 
@@ -69,7 +70,7 @@ namespace cpu {
                 out_data[pixel + 1] = static_cast<unsigned char>(std::clamp(g, 0.0f, 255.0f));
                 out_data[pixel + 2] = static_cast<unsigned char>(std::clamp(b, 0.0f, 255.0f));
             });
-
+        std::cout << "YCrCb to RGB done." << std::endl;
         return output;
     }
 
@@ -113,6 +114,8 @@ namespace cpu {
             [&lut](unsigned char& pixel) {
                 pixel = lut[pixel];
             });
+
+        std::cout << "Equalize Luma channel done." << std::endl;
     }
 
     Image equalize_histogram(const Image& input) {
@@ -136,7 +139,7 @@ namespace cpu {
             
             // Equalize Y channel only (first channel)
             equalize_channel(ycrcb.data(), size);
-            
+
             // Convert back to RGB
             return ycrcb_to_rgb(ycrcb);
         }
