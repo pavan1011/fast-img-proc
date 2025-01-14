@@ -44,7 +44,9 @@ int main(int argc, char* argv[]) {
             auto processed_img_gpu = processing::grayscale(input_img, processing::Hardware::GPU);
             processed_img_gpu.save(output_path_gpu);
 
-        }else if (operation == "equalize_histogram"){
+        }
+        else if (operation == "equalize")
+        {
             std::cout<<"Operation selected: equalize_histogram." << std::endl;
 
             // Automatic hardware selection
@@ -59,8 +61,17 @@ int main(int argc, char* argv[]) {
             auto processed_img_gpu = processing::equalize_histogram(input_img, processing::Hardware::GPU);
             processed_img_gpu.save(output_path_gpu);
         }
+        else if (operation == "edge")
+        {
+            std::cerr << "Coming soon! \n";
+
+        }
+        else if (operation == "blur"){
+            std::cerr << "Coming soon! \n";
+        }
         else {
             std::cerr << "Unknown operation: " << operation << "\n";
+            std::cerr << "Supported Operations: grayscale, blur, edge, equalize\n";
             return 1;
         }
 
