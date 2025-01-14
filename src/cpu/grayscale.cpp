@@ -6,7 +6,7 @@
 namespace cpu {
 
     Image grayscale(const Image& input) {
-        // TODO: Remove throw and return error code instead. Pass output image by reference to grayscale().
+        // TODO: Remove throw and return error code instead.
         if (input.channels() == 1){
             throw std::runtime_error("Input image has only 1 channel. Already grayscale?");
         }else if(input.channels() != 3) {
@@ -21,8 +21,7 @@ namespace cpu {
         std::vector<int> indices(size);
         std::iota(indices.begin(), indices.end(), 0);
         
-        // TODO: Create fallback option in case TBB is not installed
-        // Makes calls to TBB library 
+        // Convert pixels in parallel. STL makes calls to TBB library
         std::for_each(std::execution::par_unseq, indices.begin(), indices.end(),
             [in_data, out_data, channels = input.channels()](int i) {
                 const auto pixel = i * channels;

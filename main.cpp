@@ -29,8 +29,6 @@ int main(int argc, char* argv[]) {
 
         std::cout << "Loaded image: " << input_img.width() << "x" << input_img.height() << "\n";
 
-        std::cout<<"Before Image processed initialized" << std::endl;
-
         if (operation == "grayscale") {
             std::cout<<"Operation selected: grayscale." << std::endl;
 
@@ -54,7 +52,7 @@ int main(int argc, char* argv[]) {
 
         
     } catch (const std::exception& ex) {
-        std::cerr << "Error: " << ex.what() << std::endl;
+        std::cerr << "Error: " << ex.what() << "\n";
         return 1;
     }
     return 0;

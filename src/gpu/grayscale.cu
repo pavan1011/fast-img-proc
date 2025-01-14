@@ -52,7 +52,7 @@ namespace gpu {
         if (error != cudaSuccess) {
             cudaFree(d_input);
             cudaFree(d_output);
-            // TODO: Remove throw and return error code instead. Pass output image by reference to grayscale().
+            // TODO: Remove throw and return error code instead.
             throw std::runtime_error("Kernel execution failed");
         }
         
@@ -64,7 +64,7 @@ namespace gpu {
         if (error != cudaSuccess) {
             cudaFree(d_input);
             cudaFree(d_output);
-            // TODO: Remove throw and return error code instead. Pass output image by reference to grayscale().
+            // TODO: Remove throw and return error code instead.
             throw std::runtime_error("Failed to copy data from GPU");
         }
         
