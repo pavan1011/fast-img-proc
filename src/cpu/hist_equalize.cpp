@@ -74,10 +74,29 @@ namespace cpu {
         return output;
     }
 
-    void equalize_channel(unsigned char* data, size_t size) {
+    void equalize_channel(unsigned char* data, size_t size, size_t stride) {
+
+        // TODO: Replace throw with returning error code.
+        if (stride == 0) {
+            std::cerr << "Invalid argument passed to cpu::equalize_channel().\n";
+            throw std::invalid_argument("Stride cannot be zero");
+        }
+        if (data == nullptr) {
+            std::cerr << "Invalid argument passed to cpu::equalize_channel().\n";
+            throw std::invalid_argument("Data pointer cannot be null");
+        }
+        if (size == 0) {
+            std::cerr << "Invalid argument passed to cpu::equalize_channel().\n";
+            throw std::invalid_argument("Size cannot be zero");
+        }
+        if (size % stride != 0) {
+            std::cerr << "Invalid argument passed to cpu::equalize_channel().\n";
+            throw std::invalid_argument("Size must be divisible by stride");
+        }
+
         // Step 1: Calculate histogram
         std::vector<int> histogram(256, 0);
-        for (size_t i = 0; i < size; ++i) {
+        for (size_t i = 0; i < size; i+=stride) {
             ++histogram[data[i]];
         }
 
@@ -101,18 +120,23 @@ namespace cpu {
         // Formula: h(v) = round((cdf(v) - cdf_min) * (L-1)/(M*N - cdf_min))
         // where L is number of gray levels (256), M*N is image size
         std::vector<unsigned char> lut(256);
-        float scale = 255.0f / (size - cdf_min);
+        float scale = 255.0f / ((size/stride) - cdf_min);
         for (int i = 0; i < 256; ++i) {
             lut[i] = static_cast<unsigned char>(
                 std::round(std::clamp((cdf[i] - cdf_min) * scale, 0.0f, 255.0f))
             );
         }
+        
+        // Create indices for strided access
+        std::vector<size_t> indices(size/stride);
+        std::iota(indices.begin(), indices.end(), 0);
+
 
         // Step 5: Apply lookup table to image data in parallel
         std::for_each(std::execution::par_unseq, 
-            data, data + size,
-            [&lut](unsigned char& pixel) {
-                pixel = lut[pixel];
+            indices.begin(), indices.end(),
+            [data, stride, &lut](size_t i) {
+                data[i * stride] = lut[data[i * stride]];
             });
 
         std::cout << "Equalize Luma channel done." << std::endl;
@@ -138,7 +162,8 @@ namespace cpu {
             const auto size = input.width() * input.height();
             
             // Equalize Y channel only (first channel)
-            equalize_channel(ycrcb.data(), size);
+            // Get pointer to Y channel and stride by 3 to skip Cr and Cb
+            equalize_channel(ycrcb.data(), size*3, 3);
 
             // Convert back to RGB
             return ycrcb_to_rgb(ycrcb);

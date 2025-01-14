@@ -36,7 +36,7 @@ namespace cpu {
      * @param data Pointer to image data
      * @param size Number of pixels to process
      */
-    void equalize_channel(unsigned char* data, size_t size);
+    void equalize_channel(unsigned char* data, size_t size, size_t stride = 1);
 
 }
 
