@@ -56,6 +56,14 @@ def main():
         gpu_grayscale.save("grayscale_gpu.png")
     except RuntimeError as ex:
         printf(f"GPU processing failed: {ex}")
+    
+    # Equalize Histogram for RGB image using CPU
+    cpu_hist_equalized_rgb = fip.equalize_histogram(input_image, fip.Hardware.CPU)
+    cpu_hist_equalized_rgb.save("hist_equalized_rgb_cpu.png")
+
+    # Equalize Histogram for Grayscale image using CPU
+    cpu_hist_equalized_gray = fip.equalize_histogram(cpu_grayscale, fip.Hardware.CPU)
+    cpu_hist_equalized_gray.save("hist_equalized_gray_cpu.png")
 ```
 
 

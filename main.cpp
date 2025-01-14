@@ -44,6 +44,20 @@ int main(int argc, char* argv[]) {
             auto processed_img_gpu = processing::grayscale(input_img, processing::Hardware::GPU);
             processed_img_gpu.save(output_path_gpu);
 
+        }else if (operation == "equalize_histogram"){
+            std::cout<<"Operation selected: equalize_histogram." << std::endl;
+
+            // Automatic hardware selection
+            auto processed_img_auto = processing::equalize_histogram(input_img);
+            processed_img_auto.save(output_path_auto);
+
+            // Force CPU
+            auto processed_img_cpu = processing::equalize_histogram(input_img, processing::Hardware::CPU);
+            processed_img_cpu.save(output_path_cpu);
+
+            // Try GPU (will fall back to CPU if CUDA unavailable)
+            auto processed_img_gpu = processing::equalize_histogram(input_img, processing::Hardware::GPU);
+            processed_img_gpu.save(output_path_gpu);
         }
         else {
             std::cerr << "Unknown operation: " << operation << "\n";
