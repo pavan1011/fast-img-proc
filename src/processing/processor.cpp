@@ -1,5 +1,6 @@
 #include "processing/processor.h"
 #include "cpu/grayscale.h"
+#include "cpu/hist_equalize.h"
 #include "gpu/grayscale.cuh"
 #include <iostream>
 
@@ -22,7 +23,7 @@ namespace processing {
         }
         
         if (requested == Hardware::GPU && !is_gpu_available()) {
-            std::cerr << "Warning: GPU requested but not available. Falling back to CPU" << std::endl;
+            std::cerr << "Warning: GPU requested but not available. Falling back to CPU\n";
             return Hardware::CPU;
         }
         
@@ -42,7 +43,7 @@ namespace processing {
                     return gpu::grayscale(input);
                 } catch (const std::exception& e) {
                     std::cerr << "Warning: GPU processing failed: " << e.what() 
-                              << ". Falling back to CPU." << std::endl;
+                              << ". Falling back to CPU.\n";
                     return cpu::grayscale(input);
                 }
                 #else
@@ -51,7 +52,24 @@ namespace processing {
                 #endif
                 
             default:
-                // TODO: Remove throw and return error code instead. Pass output image by reference to grayscale().
+                // TODO: Remove throw and return error code instead.
+                throw std::runtime_error("Invalid hardware option");
+        }
+    }
+
+    Image equalize_histogram(const Image& input, Hardware hardware){
+        hardware = resolve_hardware(hardware);
+
+        switch(hardware){
+            case Hardware::CPU:
+                return cpu::equalize_histogram(input);
+            case Hardware::GPU:
+                // TODO: Enable CUDA implementation
+                std::cerr << "Warning: GPU support not yet enabled for this operation."
+                          << "Using CPU instead.\n";
+                return cpu::equalize_histogram(input);
+            default:
+                // TODO: Remove throw and return error code instead.
                 throw std::runtime_error("Invalid hardware option");
         }
     }

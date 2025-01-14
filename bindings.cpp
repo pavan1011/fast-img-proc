@@ -21,12 +21,19 @@ NB_MODULE(fast_image_processing, m) {
         .def_prop_ro("height", &Image::height)
         .def_prop_ro("channels", &Image::channels);
 
-    // Bind processing functions
-    m.def("grayscale", &processing::grayscale,
-          "Convert an RGB image to grayscale",
-          nb::arg("input"), nb::arg("hardware") = processing::Hardware::AUTO);
+    // Bind Hardware check functions
     m.def("is_gpu_available", &processing::is_gpu_available,
           "Check if GPU processing is available");
     m.def("get_active_hardware", &processing::get_active_hardware,
           "Get currently active hardware");
+
+    // Bind grayscale function
+    m.def("grayscale", &processing::grayscale,
+          "Convert an RGB image to grayscale",
+          nb::arg("input"), nb::arg("hardware") = processing::Hardware::AUTO);
+
+    // Bind processing functions
+    m.def("equalize_histogram", &processing::equalize_histogram,
+          "Equalize Histogram (accepts RGB and Grayscale image)",
+          nb::arg("input"), nb::arg("hardware") = processing::Hardware::AUTO);
 }
