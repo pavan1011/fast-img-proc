@@ -7,7 +7,9 @@ namespace cpu {
 
     Image grayscale(const Image& input) {
         // TODO: Remove throw and return error code instead. Pass output image by reference to grayscale().
-        if (input.channels() < 3) {
+        if (input.channels() == 1){
+            throw std::runtime_error("Input image has only 1 channel. Already grayscale?");
+        }else if(input.channels() != 3) {
             throw std::runtime_error("Image must have at least 3 channels");
         }
                 
