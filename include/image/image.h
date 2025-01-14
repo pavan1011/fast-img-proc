@@ -15,7 +15,7 @@ public:
     Image(Image&& other) noexcept = default;
     Image& operator=(Image&& other) noexcept = default;
     
-    // Delete copy
+    // Delete copy constructor to prevent accidental copies and memleaks
     Image(const Image&) = delete;
     Image& operator=(const Image&) = delete;
 
