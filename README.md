@@ -1,21 +1,36 @@
 # Fast Image Processing Library
 
+A memory-efficient image processing library implemented in C++, with GPU acceleration capabilities using CUDA. Python bindings provide a Pythonic interface to the library. Supported image processing operations are:
+
+- Grayscale Conversion
+- Histogram Equalization
+- Edge Detection
+- Blur
+
 ## Install
 
 ```bash
-git clone https://github.com/pavan1011/fast-img-proc.git
+git clone --recurse-submodules git@github.com:pavan1011/fast-img-proc
 cd fast-img-proc
 ```
 
 ### Configure without CUDA support (default)
+
 ```bash
-cmake . -B build -DPython_EXECUTABLE=<path to python executable> ..
+cmake -S . -B build 
+```
+
+```-DPYTHON_EXECUTABLE``` provides a hint to the CMake build system to help it find a specific version of Python.
+
+```bash
+cmake -S . -B build --DPYTHON_EXECUTABLE=<path/to/python>
 ```
 
 ### Configure with CUDA support
 Requires CUDA compiler installed
+
 ```bash
-cmake . -B build -DPython_EXECUTABLE=<path to python executable> -DUSE_CUDA=<ON> ..
+cmake -S . -B build -DUSE_CUDA=ON
 ```
 
 ### Build Project
@@ -25,9 +40,6 @@ cmake --build build
 
 ## Usage in Python
 
-### Grayscale Conversion
-
-Convert an RGB image to grayscale. 
 
 ```python
 import fast_image_processing as fip
