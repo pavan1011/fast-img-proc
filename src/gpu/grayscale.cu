@@ -5,6 +5,7 @@ namespace {
     __global__ void grayscale_kernel(const unsigned char* input, 
                                    unsigned char* output,
                                    int width, int height, int channels) {
+        // Calculate global thread index
         const int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx >= width * height) return;
         
