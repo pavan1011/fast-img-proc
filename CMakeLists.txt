@@ -4,6 +4,9 @@ project(fast_img_proc LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Enable -fPIC flag for CMake
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 
 # CUDA Optional
 option(USE_CUDA "Enable CUDA support" OFF)
@@ -20,6 +23,11 @@ endif()
 #TODO: Make TBB Optional. Fallback to sequential execution if TBB is not installed.
 find_package(TBB REQUIRED)
 
+# Find Python and nanobind for bindings
+find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/nanobind)
+
+# Add project subdirectory
 add_subdirectory(src)
 
 # Create main executable
@@ -29,3 +37,9 @@ target_include_directories(fast_img_proc
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/stb
 )
+
+
+# Create Python bindings to image_lib
+nanobind_add_module(fast_image_processing bindings.cpp)
+target_link_libraries(fast_image_processing PRIVATE image_lib)
+
