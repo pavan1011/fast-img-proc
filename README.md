@@ -11,31 +11,29 @@ A memory-efficient image processing library implemented in C++, with GPU acceler
 
 ```bash
 git clone --recurse-submodules git@github.com:pavan1011/fast-img-proc
-cd fast-img-proc
+cd fast-img-proc && mkdir build && cd build
 ```
 
 ### Configure without CUDA support (default)
 
 ```bash
-cmake -S . -B build 
+cmake -S ../ -B .
 ```
 
 ```-DPYTHON_EXECUTABLE``` provides a hint to the CMake build system to help it find a specific version of Python.
 
 ```bash
-cmake -S . -B build --DPYTHON_EXECUTABLE=<path/to/python>
+cmake -S ../ -B . --DPYTHON_EXECUTABLE=<path/to/python>
 ```
 
 ### Configure with CUDA support
 Requires CUDA compiler installed
 
 ```bash
-cmake -S . -B build -DUSE_CUDA=ON
-```
-
+cmake -S ../ -B . -DUSE_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc
 ### Build Project
 ```bash
-cmake --build build
+cmake --build .
 ```
 
 ## Usage in Python
