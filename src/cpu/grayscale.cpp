@@ -32,7 +32,7 @@ namespace cpu {
                 );
             });
 
-        std::cout << "Grayscale conversion done!" << std::endl;  
+        std::cout << "CPU: Grayscale conversion done." << std::endl;
         
         return output;
     }

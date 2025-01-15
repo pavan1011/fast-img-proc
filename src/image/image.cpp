@@ -20,7 +20,8 @@ Image::Image(const std::string& filepath) {
     // Explicit conversion to correct sized ints
     m_width = static_cast<uint32_t>(width);
     m_height = static_cast<uint32_t>(height);
-    // TODO: check if channels is between 0 and 255 before conversion to prevent data-loss/unexpected behavior
+    // TODO: check if channels is between 0 and 255 before conversion to prevent
+    // data-loss/unexpected behavior
     m_channels = static_cast<uint8_t>(channels);
     m_data = std::unique_ptr<unsigned char[]>(data);
 }

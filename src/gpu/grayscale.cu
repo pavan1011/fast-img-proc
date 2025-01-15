@@ -25,9 +25,9 @@ namespace gpu {
         return deviceCount > 0;
     }
 
-    Image to_grayscale(const Image& input) {
+    Image grayscale(const Image& input) {
         if (!is_available()) {
-            // TODO: Remove throw and return error code instead. Pass output image by reference to grayscale(). 
+            // TODO: Remove throw and return error code instead.
             throw std::runtime_error("CUDA device not available");
         }
         
@@ -48,7 +48,7 @@ namespace gpu {
         grayscale_kernel<<<numBlocks, blockSize>>>(
             d_input, d_output, input.width(), input.height(), input.channels());
 
-        error = cudaGetLastError();
+        cudaError_t error = cudaGetLastError();
         // Check for errors, free d_input and d_output if error to prevent memleaks
         if (error != cudaSuccess) {
             cudaFree(d_input);
@@ -71,6 +71,8 @@ namespace gpu {
         
         cudaFree(d_input);
         cudaFree(d_output);
+
+        std::cout << "GPU: Grayscale conversion done."
         
         return output;
     }
