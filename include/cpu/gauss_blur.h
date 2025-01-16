@@ -9,6 +9,7 @@ namespace cpu {
     Image gaussian_blur(const Image& input, 
                        int kernel_size = 3, 
                        float sigma = 1.0f);
-}
 
-#endif
+} // namespace cpu
+
+#endif // HIST_EQUALIZE_H

@@ -31,6 +31,7 @@ Requires CUDA compiler installed
 
 ```bash
 cmake -S ../ -B . -DUSE_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc
+```
 ### Build Project
 ```bash
 cmake --build .

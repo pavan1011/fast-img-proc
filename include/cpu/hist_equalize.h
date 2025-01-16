@@ -38,6 +38,6 @@ namespace cpu {
      */
     void equalize_channel(unsigned char* data, size_t size, size_t stride = 1);
 
-}
+} //namespace cpu
 
 #endif // HIST_EQUALIZE_H

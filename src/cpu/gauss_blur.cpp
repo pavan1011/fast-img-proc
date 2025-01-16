@@ -103,4 +103,5 @@ namespace cpu {
 
         return output;
     }
-} // cpu
+
+} // namespace cpu
