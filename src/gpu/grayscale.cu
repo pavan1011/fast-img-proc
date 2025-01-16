@@ -42,10 +42,10 @@ namespace gpu {
                   size * input.channels() * sizeof(unsigned char), 
                   cudaMemcpyHostToDevice);
         
-        const int blockSize = 256;
-        const int numBlocks = (size + blockSize - 1) / blockSize;
+        static constexpr int BLOCK_SIZE  = 256;
+        const int numBlocks = (size + BLOCK_SIZE  - 1) / BLOCK_SIZE ;
         
-        grayscale_kernel<<<numBlocks, blockSize>>>(
+        grayscale_kernel<<<numBlocks, BLOCK_SIZE >>>(
             d_input, d_output, input.width(), input.height(), input.channels());
 
         cudaError_t error = cudaGetLastError();
