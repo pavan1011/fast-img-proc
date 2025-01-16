@@ -74,6 +74,10 @@ def main():
     # Equalize Histogram for Grayscale image using CPU
     cpu_hist_equalized_gray = fip.equalize_histogram(cpu_grayscale, fip.Hardware.CPU)
     cpu_hist_equalized_gray.save("hist_equalized_gray_cpu.png")
+
+    # Blur image using CPU
+    cpu_blur = fip.blur(input_image, 5, 1.4, fip.Hardware.CPU)
+    cpu_blur.save("blur_cpu.png")
 ```
 
 

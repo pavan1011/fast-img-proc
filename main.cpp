@@ -67,7 +67,19 @@ int main(int argc, char* argv[]) {
 
         }
         else if (operation == "blur"){
-            std::cerr << "Coming soon! \n";
+            std::cout<<"Operation selected: blur." << std::endl;
+
+            // Automatic hardware selection
+            auto processed_img_auto = processing::blur(input_img);
+            processed_img_auto.save(output_path_auto);
+
+            // Force CPU
+            auto processed_img_cpu = processing::blur(input_img, 5, 1.4f, processing::Hardware::CPU);
+            processed_img_cpu.save(output_path_cpu);
+
+            // Try GPU (will fall back to CPU if CUDA unavailable)
+            auto processed_img_gpu = processing::blur(input_img, 5, 1.4f, processing::Hardware::GPU);
+            processed_img_gpu.save(output_path_gpu);
         }
         else {
             std::cerr << "Unknown operation: " << operation << "\n";

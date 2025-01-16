@@ -2,6 +2,7 @@ add_library(image_lib
     image/image.cpp
     cpu/grayscale.cpp
     cpu/hist_equalize.cpp
+    cpu/gauss_blur.cpp
     processing/processor.cpp
 )
 

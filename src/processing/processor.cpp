@@ -1,6 +1,7 @@
 #include "processing/processor.h"
 #include "cpu/grayscale.h"
 #include "cpu/hist_equalize.h"
+#include "cpu/gauss_blur.h"
 #include "gpu/grayscale.cuh"
 #include <iostream>
 
@@ -68,6 +69,23 @@ namespace processing {
                 std::cerr << "Warning: GPU support not yet enabled for this operation."
                           << "Using CPU instead.\n";
                 return cpu::equalize_histogram(input);
+            default:
+                // TODO: Remove throw and return error code instead.
+                throw std::runtime_error("Invalid hardware option");
+        }
+    }
+
+    Image blur(const Image& input, int kernel_size, float sigma, Hardware hardware){
+        hardware = resolve_hardware(hardware);
+
+        switch(hardware){
+            case Hardware::CPU:
+                return cpu::gaussian_blur(input, kernel_size, sigma);
+            case Hardware::GPU:
+                // TODO: Enable CUDA implementation
+                std::cerr << "Warning: GPU support not yet enabled for this operation."
+                          << "Using CPU instead.\n";
+                return cpu::gaussian_blur(input, kernel_size, sigma);
             default:
                 // TODO: Remove throw and return error code instead.
                 throw std::runtime_error("Invalid hardware option");

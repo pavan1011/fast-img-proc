@@ -32,8 +32,14 @@ NB_MODULE(fast_image_processing, m) {
           "Convert an RGB image to grayscale",
           nb::arg("input"), nb::arg("hardware") = processing::Hardware::AUTO);
 
-    // Bind processing functions
+    // Bind equalize histogram function
     m.def("equalize_histogram", &processing::equalize_histogram,
           "Equalize Histogram (accepts RGB and Grayscale image)",
           nb::arg("input"), nb::arg("hardware") = processing::Hardware::AUTO);
+
+    // Bind blur function
+    m.def("blur", &processing::blur,
+          "Gaussian BLur (accepts RGB and Grayscale image)",
+          nb::arg("input"), nb::arg("kernel_size"), nb::arg("sigma"),
+          nb::arg("hardware") = processing::Hardware::AUTO);
 }
