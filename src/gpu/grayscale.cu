@@ -8,7 +8,7 @@ namespace {
         // Calculate global thread index
         const int idx = blockIdx.x * blockDim.x + threadIdx.x;
         if (idx >= width * height) return;
-        
+
         const int pixel = idx * channels;
         output[idx] = static_cast<unsigned char>(
             0.299f * input[pixel] +
@@ -30,35 +30,54 @@ namespace gpu {
             // TODO: Remove throw and return error code instead.
             throw std::runtime_error("CUDA device not available");
         }
-        
-        const auto size = input.width() * input.height();
-        Image output(input.width(), input.height(), 1);
-        
-        unsigned char *d_input, *d_output;
-        cudaMalloc(&d_input, size * input.channels() * sizeof(unsigned char));
-        cudaMalloc(&d_output, size * sizeof(unsigned char));
-        
-        cudaMemcpy(d_input, input.data(), 
-                  size * input.channels() * sizeof(unsigned char), 
-                  cudaMemcpyHostToDevice);
-        
-        static constexpr int BLOCK_SIZE  = 256;
-        const int numBlocks = (size + BLOCK_SIZE  - 1) / BLOCK_SIZE ;
-        
-        grayscale_kernel<<<numBlocks, BLOCK_SIZE >>>(
-            d_input, d_output, input.width(), input.height(), input.channels());
 
-        cudaError_t error = cudaGetLastError();
+        const auto width = input.width();
+        const auto height = input.height();
+        const auto channels = input.channels();
+        const auto size = width * height;
+        cudaError_t error;
+
+        if (channels != 3) {
+            // TODO: Remove throw and return error code instead.
+            throw std::invalid_argument("Input image must have 3 channels");
+        }
+
+        Image output(width, height, 1);
+        unsigned char *d_input, *d_output;
+        cudaMalloc(&d_input, size * channels * sizeof(unsigned char));
+        cudaMalloc(&d_output, size * sizeof(unsigned char));
+
+        error = cudaMemcpy(d_input, input.data(),
+                  size * channels * sizeof(unsigned char),
+                  cudaMemcpyHostToDevice);
+
         // Check for errors, free d_input and d_output if error to prevent memleaks
         if (error != cudaSuccess) {
             cudaFree(d_input);
             cudaFree(d_output);
             // TODO: Remove throw and return error code instead.
-            throw std::runtime_error("Kernel execution failed");
+            throw std::runtime_error(std::string("Failed to copy data to GPU:") +
+                                     cudaGetErrorString(error));
         }
-        
-        error = cudaMemcpy(output.data(), d_output, 
-                          size * sizeof(unsigned char), 
+
+        static constexpr int BLOCK_SIZE  = 256;
+        const int numBlocks = (size + BLOCK_SIZE  - 1) / BLOCK_SIZE ;
+
+        grayscale_kernel<<<numBlocks, BLOCK_SIZE >>>(
+            d_input, d_output, width, height, channels);
+
+        error = cudaGetLastError();
+        // Check for errors, free d_input and d_output if error to prevent memleaks
+        if (error != cudaSuccess) {
+            cudaFree(d_input);
+            cudaFree(d_output);
+            // TODO: Remove throw and return error code instead.
+            throw std::runtime_error(std::string("Kernel exeuction failed:") +
+                                     cudaGetErrorString(error));
+        }
+
+        error = cudaMemcpy(output.data(), d_output,
+                          size * sizeof(unsigned char),
                           cudaMemcpyDeviceToHost);
 
         // Check for errors, free d_input and d_output if error to prevent memleaks
@@ -66,14 +85,15 @@ namespace gpu {
             cudaFree(d_input);
             cudaFree(d_output);
             // TODO: Remove throw and return error code instead.
-            throw std::runtime_error("Failed to copy data from GPU");
+            throw std::runtime_error(std::string("Failed to copy data from GPU:") +
+                                     cudaGetErrorString(error));
         }
-        
+
         cudaFree(d_input);
         cudaFree(d_output);
 
         std::cout << "GPU: Grayscale conversion done."
-        
+
         return output;
     }
 }
