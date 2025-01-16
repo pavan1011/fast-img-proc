@@ -25,6 +25,7 @@ namespace processing {
     // Wrapper for gaussian blur function
     Image blur(const Image& input, int kernel_size = 3, float sigma = 1.0f,
                Hardware hardware = Hardware::AUTO);
-}
+
+} // namespace processing
 
 #endif // PROCESSOR_H

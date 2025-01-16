@@ -96,4 +96,4 @@ namespace gpu {
 
         return output;
     }
-}
+} // namespace gpu

@@ -91,4 +91,4 @@ namespace processing {
                 throw std::runtime_error("Invalid hardware option");
         }
     }
-}
+} // namespace processing
