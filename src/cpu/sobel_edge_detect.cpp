@@ -24,7 +24,7 @@ namespace {
 
     // Normalized by sum = 50
     constexpr std::array<float, 7> smooth_7 = {1.f/50, 6.f/50, 15.f/50, 
-                                               20.f/50, 15.f/50, 6.f/50, 1.5/50}; 
+                                               20.f/50, 15.f/50, 6.f/50, 1.f/50}; 
 
     // Get kernel based on order of derivative and kernel size
     const float* get_kernel(int derivative_order, int kernel_size) {
@@ -60,7 +60,7 @@ namespace {
                     int width, int height,
                     int dx, int dy, int kernel_size) {
         const float* kernel_dx = get_kernel(dx, kernel_size); // Derivative in X if dx=1
-        const float* kernel_dy = get_kernel(dy, kernel_size); // Derivative in Y if dx=1
+        const float* kernel_dy = get_kernel(dy, kernel_size); // Derivative in Y if dy=1
         const float* kernel_smooth = get_kernel(0, kernel_size);  // Smoothing kernel
         // Add kernel pointer validation
         if (!kernel_dx || !kernel_dy || !kernel_smooth) {
@@ -100,7 +100,7 @@ namespace {
                         // apply smoothing kernel in X-direction if dx=0
                         sum_x += input[y * width + px] * kernel_smooth[k + radius];
                     }
-                    // For Y gradient: always apply smoothin in Y-direction
+                    // For Y gradient: always apply smoothing in Y-direction
                     sum_y += input[y * width + px] * kernel_smooth[k + radius];
                 }
                 temp[idx] = std::make_pair(sum_x, sum_y);
@@ -175,13 +175,11 @@ namespace cpu {
 
         // Convert to grayscale if needed
         const unsigned char* source_data;
-        Image gray_image = input.channels() == 1 ? 
-            Image(input.width(), input.height(), 1) :
-            cpu::grayscale(input);
 
         if (input.channels() == 1) {
             source_data = input.data();
         } else {
+            Image gray_image = cpu::grayscale(input);
             source_data = gray_image.data();
         }
 
