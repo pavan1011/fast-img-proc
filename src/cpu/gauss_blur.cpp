@@ -61,7 +61,7 @@ namespace {
                     const int px = std::clamp(x + k, 0, width - 1);
                     // use channel offset to choose the right channel
                     // being processed.
-                    sum += input[(y * width + px) * channels + \
+                    sum += input[(y * width + px) * channels + 
                         channel_offset] * kernel[k + radius];
                 }
                 temp[idx] = sum;
