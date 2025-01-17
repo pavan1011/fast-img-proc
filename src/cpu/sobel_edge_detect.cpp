@@ -1,0 +1,195 @@
+#include "cpu/sobel_edge_detect.h"
+#include "cpu/grayscale.h"
+#include <algorithm>
+#include <cmath>
+#include <execution>
+#include <vector>
+#include <array>
+#include <iostream>
+
+namespace {
+    // Preset Sobel kernels
+    // Derivative kernels (dx=1 or dy=1) for calculating gradient
+    constexpr std::array<float, 3> sobel_3 = {-1, 0, 1};
+    constexpr std::array<float, 5> sobel_5 = {-1, -2, 0, 2, 1};
+    constexpr std::array<float, 7> sobel_7 = {-1, -4, -5, 0, 5, 4, 1};
+
+    // Smoothing kernels (dx=0 or dy=0) for reducing noise
+     // Normalized by sum = 4
+    constexpr std::array<float, 3> smooth_3 = {1.f/4, 2.f/4, 1.f/4};
+
+    // Normalized by sum = 16
+    constexpr std::array<float, 5> smooth_5 = {1.f/16, 4.f/16, 6.f/16, 4.f/16, 
+                                               1.f/16}; 
+
+    // Normalized by sum = 50
+    constexpr std::array<float, 7> smooth_7 = {1.f/50, 6.f/50, 15.f/50, 
+                                               20.f/50, 15.f/50, 6.f/50, 1.5/50}; 
+
+    // Get kernel based on order of derivative and kernel size
+    const float* get_kernel(int derivative_order, int kernel_size) {
+        if (derivative_order == 0) {
+            switch(kernel_size) {
+                case 3: return smooth_3.data();
+                case 5: return smooth_5.data();
+                case 7: return smooth_7.data();
+                default: return nullptr;
+            }
+        } else {  // derivative_order == 1
+            switch(kernel_size) {
+                case 3: return sobel_3.data();
+                case 5: return sobel_5.data();
+                case 7: return sobel_7.data();
+                default: return nullptr;
+            }
+        }
+    }
+
+    // Helper function to print chosen kernel
+    void print_kernel(const float* kernel, int size, const char* name) {
+        std::cout << name << " (size " << size << "): [";
+        for (int i = 0; i < size; ++i) {
+            std::cout << kernel[i];
+            if (i < size-1) std::cout << ", ";
+        }
+        std::cout << "]" << std::endl;
+    }
+
+    // Sobel operator implemented using separable convolution
+    void apply_sobel(const unsigned char* input, unsigned char* output,
+                    int width, int height,
+                    int dx, int dy, int kernel_size) {
+        const float* kernel_dx = get_kernel(dx, kernel_size); // Derivative in X if dx=1
+        const float* kernel_dy = get_kernel(dy, kernel_size); // Derivative in Y if dx=1
+        const float* kernel_smooth = get_kernel(0, kernel_size);  // Smoothing kernel
+        // Add kernel pointer validation
+        if (!kernel_dx || !kernel_dy || !kernel_smooth) {
+            throw std::runtime_error(
+                "Failed to generate kernels. Possible invalid config");
+        }
+        const int radius = kernel_size / 2;
+
+        print_kernel(kernel_dx, kernel_size, "X kernel");
+        print_kernel(kernel_dy, kernel_size, "Y kernel");
+        print_kernel(kernel_smooth, kernel_size, "Smoothing kernel");
+
+        std::vector<int> indices(width * height);
+        std::iota(indices.begin(), indices.end(), 0);
+
+        // Temporary buffer for intermediate results
+        // for X and Y axis gradients during separable convolution
+        std::vector<std::pair<float, float>> temp(width * height);
+
+        // Apply horizontal convolution (X-direction)
+        std::for_each(std::execution::par_unseq, indices.begin(), indices.end(),
+            [input, &temp, width, height, kernel_dx, kernel_dy, kernel_smooth, radius, dx, dy]
+            (int idx) {
+                const int x = idx % width;
+                const int y = idx / width;
+                float sum_x = 0.0f;
+                float sum_y = 0.0f;
+
+                for(int k = -radius; k <= radius; ++k) {
+                    //X direction: input[y * width + px] is a pixel
+                    const int px = std::clamp(x + k, 0, width - 1);
+                    // For X gradient:
+                    if (dx) {
+                        // apply derivative kernel in X-direction if dx=1,
+                        sum_x += input[y * width + px] * kernel_dx[k + radius];
+                    } else {
+                        // apply smoothing kernel in X-direction if dx=0
+                        sum_x += input[y * width + px] * kernel_smooth[k + radius];
+                    }
+                    // For Y gradient: always apply smoothin in Y-direction
+                    sum_y += input[y * width + px] * kernel_smooth[k + radius];
+                }
+                temp[idx] = std::make_pair(sum_x, sum_y);
+            });
+
+        // Apply vertical convolution (Y-direction) and compute gradients
+        std::for_each(std::execution::par_unseq, indices.begin(), indices.end(),
+            [&temp, output, width, height, kernel_dx, kernel_dy, kernel_smooth, radius, dx, dy]
+            (int idx) {
+                const int x = idx % width;
+                const int y = idx / width;
+                float grad_x = 0.0f;
+                float grad_y = 0.0f;
+
+                for(int k = -radius; k <= radius; ++k) {
+                    const int py = std::clamp(y + k, 0, height - 1); // Y-direction
+                    // For X gradient:
+                    // always apply smoothing in Y-direction 
+                    grad_x += temp[py * width + x].first * kernel_smooth[k + radius];
+
+                    // For Y gradient:
+                    if (dy) {
+                        // apply derivative kernel in Y-direction if dy=1,
+                        grad_y += temp[py * width + x].second * kernel_dy[k + radius];
+                    } else {
+                        // apply smoothing kernel if dy=0
+                        grad_y += temp[py * width + x].second * kernel_smooth[k + radius];
+                    }
+                    
+                }
+
+                // Compute final gradient magnitude
+                float magnitude;
+                if (dx && dy) {
+                    magnitude = std::sqrt(grad_x * grad_x + grad_y * grad_y);
+                } else if (dx) {
+                    magnitude = std::abs(grad_x);
+                } else {
+                    magnitude = std::abs(grad_y);
+                }
+
+                output[idx] = static_cast<unsigned char>(
+                    std::clamp(magnitude, 0.0f, 255.0f));
+            });
+    }
+} // local namespace
+
+namespace cpu {
+    Image sobel_edge_detect(const Image& input, int dx, int dy, int kernel_size) {
+        if (dx < 0 || dx > 1 || dy < 0 || dy > 1) {
+            throw std::invalid_argument("dx and dy must be either 0 or 1");
+        }
+        if (dx == 0 && dy == 0) {
+            throw std::invalid_argument("At least one of dx or dy must be 1");
+        }
+        if (kernel_size % 2 == 0 || kernel_size < 1 || kernel_size > 7) {
+            throw std::invalid_argument("Kernel size must be 1, 3, 5, or 7");
+        }
+
+        const auto width = input.width();
+        const auto height = input.height();
+        if (width < kernel_size || height < kernel_size) {
+            throw std::invalid_argument(
+                "Image dimensions must be at least kernel_size x kernel_size");
+        }
+
+        // Special case for kernel_size = 1, 
+        // OpenCV implements separable conv of 1x3 X 3x1 in this case.
+        if (kernel_size == 1) {
+            kernel_size = 3;  // Use 3x3 kernel
+        }
+
+        // Convert to grayscale if needed
+        const unsigned char* source_data;
+        Image gray_image = input.channels() == 1 ? 
+            Image(input.width(), input.height(), 1) :
+            cpu::grayscale(input);
+
+        if (input.channels() == 1) {
+            source_data = input.data();
+        } else {
+            source_data = gray_image.data();
+        }
+
+        Image output(width, height, 1);
+        apply_sobel(source_data, output.data(), width, height, 
+                   dx, dy, kernel_size);
+        
+        std::cout << "CPU Sobel edge detect done." << std::endl;
+        return output;
+    }
+} // namespace cpu

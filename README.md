@@ -79,6 +79,15 @@ def main():
     # Blur image using CPU
     cpu_blur = fip.blur(input_image, 5, 1.4, fip.Hardware.CPU)
     cpu_blur.save("blur_cpu.png")
+
+    # Edge detection using CPU
+    # Derivatives on x-axis, smoothing on y-axis, kernel_size = 5
+    cpu_edge_1_0_5 = fip.edge_detect(input_image, 1, 0, 5, fip.Hardware.CPU)
+    cpu_edge_1_0_5.save("edge_1_0_5_cpu.png")
+
+    # Derivatives on y-axis, smoothing on x-axis, kernel_size = 5
+    cpu_edge_0_1_5 = fip.edge_detect(input_image, 0, 1, 5, fip.Hardware.CPU)
+    cpu_edge_0_1_5.save("edge_0_1_5_cpu.png")
 ```
 
 

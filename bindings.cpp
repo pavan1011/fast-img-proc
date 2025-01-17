@@ -39,7 +39,13 @@ NB_MODULE(fast_image_processing, m) {
 
     // Bind blur function
     m.def("blur", &processing::blur,
-          "Gaussian BLur (accepts RGB and Grayscale image)",
+          "Gaussian Blur (accepts RGB and Grayscale image)",
           nb::arg("input"), nb::arg("kernel_size"), nb::arg("sigma"),
+          nb::arg("hardware") = processing::Hardware::AUTO);
+
+    // Bind edge detect function
+    m.def("edge_detect", &processing::edge_detect,
+          "Sobel Edge Detection (accepts RGB and Grayscale image)",
+          nb::arg("input"), nb::arg("dx"), nb::arg("dy"), nb::arg("kernel_size"),
           nb::arg("hardware") = processing::Hardware::AUTO);
 }

@@ -3,6 +3,7 @@ add_library(image_lib
     cpu/grayscale.cpp
     cpu/hist_equalize.cpp
     cpu/gauss_blur.cpp
+    cpu/sobel_edge_detect.cpp
     processing/processor.cpp
 )
 
