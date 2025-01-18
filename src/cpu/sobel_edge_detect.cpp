@@ -59,18 +59,16 @@ namespace {
     void apply_sobel(const unsigned char* input, unsigned char* output,
                     int width, int height,
                     int dx, int dy, int kernel_size) {
-        const float* kernel_dx = get_kernel(dx, kernel_size); // Derivative in X if dx=1
-        const float* kernel_dy = get_kernel(dy, kernel_size); // Derivative in Y if dy=1
+        const float* kernel_deriv = get_kernel(1, kernel_size); // Derivative kernel
         const float* kernel_smooth = get_kernel(0, kernel_size);  // Smoothing kernel
         // Add kernel pointer validation
-        if (!kernel_dx || !kernel_dy || !kernel_smooth) {
+        if (!kernel_deriv || !kernel_smooth) {
             throw std::runtime_error(
                 "Failed to generate kernels. Possible invalid config");
         }
         const int radius = kernel_size / 2;
 
-        print_kernel(kernel_dx, kernel_size, "X kernel");
-        print_kernel(kernel_dy, kernel_size, "Y kernel");
+        print_kernel(kernel_deriv, kernel_size, "Derivative kernel");
         print_kernel(kernel_smooth, kernel_size, "Smoothing kernel");
 
         std::vector<int> indices(width * height);
@@ -82,7 +80,7 @@ namespace {
 
         // Apply horizontal convolution (X-direction)
         std::for_each(std::execution::par_unseq, indices.begin(), indices.end(),
-            [input, &temp, width, height, kernel_dx, kernel_dy, kernel_smooth, radius, dx, dy]
+            [input, &temp, width, height, kernel_deriv, kernel_smooth, radius, dx, dy]
             (int idx) {
                 const int x = idx % width;
                 const int y = idx / width;
@@ -95,7 +93,7 @@ namespace {
                     // For X gradient:
                     if (dx) {
                         // apply derivative kernel in X-direction if dx=1,
-                        sum_x += input[y * width + px] * kernel_dx[k + radius];
+                        sum_x += input[y * width + px] * kernel_deriv[k + radius];
                     } else {
                         // apply smoothing kernel in X-direction if dx=0
                         sum_x += input[y * width + px] * kernel_smooth[k + radius];
@@ -108,7 +106,7 @@ namespace {
 
         // Apply vertical convolution (Y-direction) and compute gradients
         std::for_each(std::execution::par_unseq, indices.begin(), indices.end(),
-            [&temp, output, width, height, kernel_dx, kernel_dy, kernel_smooth, radius, dx, dy]
+            [&temp, output, width, height, kernel_deriv, kernel_smooth, radius, dx, dy]
             (int idx) {
                 const int x = idx % width;
                 const int y = idx / width;
@@ -124,7 +122,7 @@ namespace {
                     // For Y gradient:
                     if (dy) {
                         // apply derivative kernel in Y-direction if dy=1,
-                        grad_y += temp[py * width + x].second * kernel_dy[k + radius];
+                        grad_y += temp[py * width + x].second * kernel_deriv[k + radius];
                     } else {
                         // apply smoothing kernel if dy=0
                         grad_y += temp[py * width + x].second * kernel_smooth[k + radius];
@@ -160,17 +158,15 @@ namespace cpu {
             throw std::invalid_argument("Kernel size must be 1, 3, 5, or 7");
         }
 
+        // Special case for kernel_size = 1,
+        // OpenCV implements separable conv of 1x3 X 3x1 in this case.
+        if (kernel_size == 1) kernel_size = 3;
+
         const auto width = input.width();
         const auto height = input.height();
         if (width < kernel_size || height < kernel_size) {
             throw std::invalid_argument(
                 "Image dimensions must be at least kernel_size x kernel_size");
-        }
-
-        // Special case for kernel_size = 1, 
-        // OpenCV implements separable conv of 1x3 X 3x1 in this case.
-        if (kernel_size == 1) {
-            kernel_size = 3;  // Use 3x3 kernel
         }
 
         // Convert to grayscale if needed
