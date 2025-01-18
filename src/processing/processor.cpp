@@ -4,6 +4,7 @@
 #include "cpu/gauss_blur.h"
 #include "cpu/sobel_edge_detect.h"
 #include "gpu/grayscale.cuh"
+#include "gpu/sobel_edge_detect.cuh"
 #include <iostream>
 
 namespace processing {
@@ -106,9 +107,18 @@ namespace processing {
                 return cpu::sobel_edge_detect(input, dx, dy, kernel_size);
 
             case Hardware::GPU:
-                // TODO: Enable CUDA implementation
-                std::cerr << "Warning: GPU support not yet enabled for this operation."
-                          << "Using CPU instead.\n";
+                #ifdef USE_CUDA
+                try {
+                    return gpu::sobel_edge_detect(input, dx, dy, kernel_size);
+                } catch (const std::exception& e) {
+                    std::cerr << "Warning: GPU processing failed: " << e.what() 
+                              << ". Falling back to CPU.\n";
+                    return cpu::sobel_edge_detect(input, dx, dy, kernel_size);
+                }
+                #else
+                std::cerr << "Warning: GPU support not compiled. Using CPU.\n";
+                return cpu::sobel_edge_detect(input, dx, dy, kernel_size);
+                #endif
                 return cpu::sobel_edge_detect(input, dx, dy, kernel_size);
 
             default:
