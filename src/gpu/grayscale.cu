@@ -1,5 +1,6 @@
 #include "gpu/grayscale.cuh"
 #include <cuda_runtime.h>
+#include <iostream>
 
 namespace {
     __global__ void grayscale_kernel(const unsigned char* input, 
@@ -92,7 +93,7 @@ namespace gpu {
         cudaFree(d_input);
         cudaFree(d_output);
 
-        std::cout << "GPU: Grayscale conversion done."
+        std::cout << "GPU: Grayscale conversion done.";
 
         return output;
     }
