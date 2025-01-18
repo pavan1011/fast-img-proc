@@ -175,11 +175,12 @@ namespace cpu {
 
         // Convert to grayscale if needed
         const unsigned char* source_data;
+        Image gray_image(input.width(), input.height(), 1);
 
         if (input.channels() == 1) {
             source_data = input.data();
         } else {
-            Image gray_image = cpu::grayscale(input);
+            gray_image = cpu::grayscale(input);
             source_data = gray_image.data();
         }
 
