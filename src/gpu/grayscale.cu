@@ -93,7 +93,7 @@ namespace gpu {
         cudaFree(d_input);
         cudaFree(d_output);
 
-        std::cout << "GPU: Grayscale conversion done.";
+        std::cout << "GPU: Grayscale conversion done." << std::endl;
 
         return output;
     }
