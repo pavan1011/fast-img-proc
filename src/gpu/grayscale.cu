@@ -27,8 +27,10 @@ namespace gpu {
     }
 
     Image grayscale(const Image& input) {
+        LOG(DEBUG, "GPU: Starting Grayscale conversion.");
         if (!is_available()) {
             // TODO: Remove throw and return error code instead.
+            LOG(ERROR, "CUDA device not available");
             throw std::runtime_error("CUDA device not available");
         }
 
@@ -40,6 +42,7 @@ namespace gpu {
 
         if (channels != 3) {
             // TODO: Remove throw and return error code instead.
+            LOG(ERROR, "Input image must have 3 channels");
             throw std::invalid_argument("Input image must have 3 channels");
         }
 
@@ -57,6 +60,7 @@ namespace gpu {
             cudaFree(d_input);
             cudaFree(d_output);
             // TODO: Remove throw and return error code instead.
+            LOG(ERROR, "Failed to copy data to GPU: {}", cudaGetErrorString(error));
             throw std::runtime_error(std::string("Failed to copy data to GPU:") +
                                      cudaGetErrorString(error));
         }
@@ -73,6 +77,7 @@ namespace gpu {
             cudaFree(d_input);
             cudaFree(d_output);
             // TODO: Remove throw and return error code instead.
+            LOG(ERROR, "CUDA Kernel exeuction failed: {}", cudaGetErrorString(error));
             throw std::runtime_error(std::string("Kernel exeuction failed:") +
                                      cudaGetErrorString(error));
         }
@@ -86,6 +91,7 @@ namespace gpu {
             cudaFree(d_input);
             cudaFree(d_output);
             // TODO: Remove throw and return error code instead.
+            LOG(ERROR, "Failed to copy data from GPU: {}", cudaGetErrorString(error));
             throw std::runtime_error(std::string("Failed to copy data from GPU:") +
                                      cudaGetErrorString(error));
         }
@@ -93,7 +99,7 @@ namespace gpu {
         cudaFree(d_input);
         cudaFree(d_output);
 
-        std::cout << "GPU: Grayscale conversion done." << std::endl;
+        LOG(DEBUG, "GPU: Grayscale conversion done.");
 
         return output;
     }

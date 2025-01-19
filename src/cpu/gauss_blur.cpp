@@ -1,11 +1,11 @@
 #include "cpu/gauss_blur.h"
+#include "logging/logging.h"
 #include <vector>
 #include <execution>
 #include <algorithm>
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
-
 
 namespace {
     std::vector<float> create_gaussian_kernel(int size, float sigma) {
@@ -26,12 +26,12 @@ namespace {
         }
 
         // Print kernel values
-        std::cout << "Gaussian kernel (size=" << size << ", sigma=" << sigma << "):\n[";
+        LOG_NNL(DEBUG, "Gaussian kernel (size= {}, sigma= {}):\n[", size, sigma);
         for(int i = 0; i < size; ++i) {
-            std::cout << kernel[i];
-            if(i < size-1) std::cout << ", ";
+            LOG_NNL(DEBUG, "{}", kernel[i]);
+            if(i < size-1) LOG_NNL(DEBUG, ", ");
         }
-        std::cout << "]\n";
+        LOG_NNL(DEBUG, "]\n");
 
         return kernel;
     }
@@ -92,11 +92,15 @@ namespace {
 
 namespace cpu {
     Image gaussian_blur(const Image& input, int kernel_size, float sigma) {
+        LOG(DEBUG, "CPU: Starting Gaussian blur.");
         // Validate kernel size
         if (kernel_size % 2 == 0) {
+            LOG(ERROR, "Kernel size must be odd");
             throw std::invalid_argument("Kernel size must be odd.");
         }
         if (kernel_size < 3 || kernel_size > 30) {
+            // TODO: Test larger kernel size and enable if possible
+            LOG(ERROR, "Kernel size supported: 3x3 up to 29x29");
             throw std::invalid_argument("Kernel size supported: 3x3 up to 29x29");
         }
 
@@ -104,9 +108,8 @@ namespace cpu {
         // From OpenCV implementation.
         if (sigma <= 0.0f) {
             sigma = 0.3f * ((kernel_size - 1) * 0.5f - 1) + 1.0f;
-            std::cout << "Blur: sigma value set to non-positive,"
-                      << "calculating default. Sigma:" << sigma << std::endl;
-
+            LOG(WARN, "Blur: sigma value set to non-positive,"
+                       "calculating default. Sigma: {}", sigma);
         }
 
         const auto width = input.width();
@@ -115,7 +118,9 @@ namespace cpu {
 
         // Validate image dimensions
         if (width < kernel_size || height < kernel_size) {
-            throw std::invalid_argument("Image dimensions must be at least kernel_size x kernel_size");
+            LOG(ERROR, "Image dimensions must be at least kernel_size x kernel_size");
+            throw std::invalid_argument("Image dimensions must be at "
+                                        "least kernel_size x kernel_size");
         }
 
         auto kernel = create_gaussian_kernel(kernel_size, sigma);
@@ -127,6 +132,7 @@ namespace cpu {
                               width, height, channels, c, kernel);
         }
 
+        LOG(DEBUG, "CPU: Gaussian blur done.");
         return output;
     }
 

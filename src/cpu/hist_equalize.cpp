@@ -1,4 +1,5 @@
 #include "cpu/hist_equalize.h"
+#include <logging/logging.h>
 #include <vector>
 #include <algorithm>
 #include <execution>
@@ -8,6 +9,8 @@
 namespace cpu {
     Image rgb_to_ycrcb(const Image& input) {
         if (input.channels() != 3) {
+            LOG(ERROR, "Only 3 channels (RGB) supported as color input image for "
+                       "equalizing histogram.");
             throw std::runtime_error("RGB to YCrCb conversion requires 3 channels");
         }
 
@@ -36,12 +39,14 @@ namespace cpu {
                 out_data[pixel + 1] = static_cast<unsigned char>(std::clamp(cr, 0.0f, 255.0f));
                 out_data[pixel + 2] = static_cast<unsigned char>(std::clamp(cb, 0.0f, 255.0f));
             });
-        std::cout << "RGB to YCrCb done." << std::endl;
+        LOG(DEBUG, "RGB to YCrCb done.");
         return output;
     }
 
     Image ycrcb_to_rgb(const Image& input) {
         if (input.channels() != 3) {
+            LOG(ERROR, "Only 3 channels (RGB) supported as color input image for "
+                        "equalizing histogram.");
             throw std::runtime_error("YCrCb to RGB conversion requires 3 channels");
         }
 
@@ -70,7 +75,7 @@ namespace cpu {
                 out_data[pixel + 1] = static_cast<unsigned char>(std::clamp(g, 0.0f, 255.0f));
                 out_data[pixel + 2] = static_cast<unsigned char>(std::clamp(b, 0.0f, 255.0f));
             });
-        std::cout << "YCrCb to RGB done." << std::endl;
+        LOG(DEBUG, "YCrCb to RGB done.");
         return output;
     }
 
@@ -78,19 +83,24 @@ namespace cpu {
 
         // TODO: Replace throw with returning error code.
         if (stride == 0) {
-            std::cerr << "Invalid argument passed to cpu::equalize_channel().\n";
+            LOG(ERROR, "Invalid argument passed to cpu::equalize_channel():"
+                            "Stride cannot be zero");
             throw std::invalid_argument("Stride cannot be zero");
         }
         if (data == nullptr) {
-            std::cerr << "Invalid argument passed to cpu::equalize_channel().\n";
+            LOG(ERROR, "Invalid argument passed to cpu::equalize_channel():"
+                           "Stride cannot be zero");
             throw std::invalid_argument("Data pointer cannot be null");
         }
         if (size == 0) {
-            std::cerr << "Invalid argument passed to cpu::equalize_channel().\n";
+            LOG(ERROR, "Invalid argument passed to cpu::equalize_channel(): ");
+            LOG(ERROR, "Image size cannot be zero");
             throw std::invalid_argument("Size cannot be zero");
         }
         if (size % stride != 0) {
-            std::cerr << "Invalid argument passed to cpu::equalize_channel().\n";
+            LOG(ERROR, "Invalid argument passed to cpu::equalize_channel(): ");
+            LOG(ERROR, "No. of pixels must be divisible by channels! "
+                       "Only 3 channels (RGB) supported for color images");
             throw std::invalid_argument("Size must be divisible by stride");
         }
 
@@ -139,10 +149,11 @@ namespace cpu {
                 data[i * stride] = lut[data[i * stride]];
             });
 
-        std::cout << "Equalize Luma channel done." << std::endl;
+        LOG(DEBUG, "Equalize Luma channel done.");
     }
 
     Image equalize_histogram(const Image& input) {
+        LOG(DEBUG, "CPU: Starting histogram equalization.");
         if (input.channels() == 1) {
             // For grayscale images, equalize directly
             Image output(input.width(), input.height(), 1);
@@ -151,6 +162,7 @@ namespace cpu {
 
             // Call to equalize single channel
             equalize_channel(output.data(), size);
+            LOG(DEBUG, "CPU: Histogram equalization done.");
             return output;
         }
         else if (input.channels() == 3) {
@@ -165,10 +177,12 @@ namespace cpu {
             // Get pointer to Y channel and stride by 3 to skip Cr and Cb
             equalize_channel(ycrcb.data(), size*3, 3);
 
+            LOG(DEBUG, "CPU: Histogram equalization done.");
             // Convert back to RGB
             return ycrcb_to_rgb(ycrcb);
         }
         else {
+            LOG(ERROR, "Image must have 1 or 3 channels (Gray/RGB) for histogram equalization");
             throw std::runtime_error("Image must have 1 or 3 channels for histogram equalization");
         }
     }

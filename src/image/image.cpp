@@ -6,6 +6,7 @@
 #include "stb_image.h"
 #include "stb_image_write.h"
 #include "image/image.h"
+#include "logging/logging.h"
 #include <stdexcept>
 #include <iostream>
 
@@ -13,6 +14,7 @@ Image::Image(const std::string& filepath) {
     int width, height, channels;
     unsigned char* data = stbi_load(filepath.c_str(), &width, &height, &channels, 0);
     if (!data) {
+        LOG(ERROR, "Failed to load image: {}", filepath);
         // TODO: Remove throw and return error code instead.
         throw std::runtime_error("Failed to load image: " + filepath);
     }

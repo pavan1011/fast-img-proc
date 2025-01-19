@@ -9,9 +9,7 @@
 #define CUDA_CHECK(call) do { \
     cudaError_t err = call; \
     if (err != cudaSuccess) { \
-        std::string error_msg = "CUDA error in " + std::string(__FILE__) + \
-                               " line " + std::to_string(__LINE__) + ": " + \
-                               cudaGetErrorString(err); \
+        LOG(ERROR, "CUDA error: {}", cudaGetErrorString(err)); \
         throw std::runtime_error(error_msg); \
     } \
 } while(0)
@@ -167,17 +165,22 @@ namespace {
 
 namespace gpu {
     Image sobel_edge_detect(const Image& input, int dx, int dy, int kernel_size) {
+        LOG(DEBUG, "GPU: Starting Sobel edge detection.");
         if (!is_available()) {
+            LOG(ERROR, "CUDA device not available");
             throw std::runtime_error("CUDA device not available");
         }
 
         if (dx < 0 || dx > 1 || dy < 0 || dy > 1) {
+            LOG(ERROR, "Invalid derivative order: dx and dy must be either 0 or 1");
             throw std::invalid_argument("dx and dy must be either 0 or 1");
         }
         if (dx == 0 && dy == 0) {
+            LOG(ERROR, "Invalid derivative order: At least one of dx or dy must be 1");
             throw std::invalid_argument("At least one of dx or dy must be 1");
         }
         if (kernel_size % 2 == 0 || kernel_size < 1 || kernel_size > 7) {
+            LOG(ERROR, "Invalid kernel size. Must be 1, 3, 5, or 7");
             throw std::invalid_argument("Kernel size must be 1, 3, 5, or 7");
         }
 
@@ -186,6 +189,7 @@ namespace gpu {
         const auto width = input.width();
         const auto height = input.height();
         if (width < kernel_size || height < kernel_size) {
+            LOG(ERROR, "Image dimensions must be at least kernel_size x kernel_size");
             throw std::invalid_argument(
                 "Image dimensions must be at least kernel_size x kernel_size");
         }
@@ -267,13 +271,14 @@ namespace gpu {
             CUDA_CHECK(cudaFreeArray(d_array));
             CUDA_CHECK(cudaFree(d_output));
 
-            std::cout << "GPU Sobel edge detect done." << std::endl;
+            LOG(DEBUG , "GPU: Sobel edge detect done.");
             return output;
 
         } catch (...) {
             if (tex_input) cudaDestroyTextureObject(tex_input);
             if (d_array) cudaFreeArray(d_array);
             if (d_output) cudaFree(d_output);
+            LOG(ERROR , "Error in GPU Sobel edge detect!");
             throw;
         }
     }

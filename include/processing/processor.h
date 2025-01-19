@@ -1,6 +1,7 @@
 #ifndef PROCESSOR_H
 #define PROCESSOR_H
 #include "image/image.h"
+#include <string>
 
 namespace processing {
     // Enum to handle different hardware for execution

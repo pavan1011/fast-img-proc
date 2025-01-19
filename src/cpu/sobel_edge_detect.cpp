@@ -1,5 +1,6 @@
 #include "cpu/sobel_edge_detect.h"
 #include "cpu/grayscale.h"
+#include <logging/logging.h>
 #include <algorithm>
 #include <cmath>
 #include <execution>
@@ -47,12 +48,12 @@ namespace {
 
     // Helper function to print chosen kernel
     void print_kernel(const float* kernel, int size, const char* name) {
-        std::cout << name << " (size " << size << "): [";
+        LOG_NNL(DEBUG, "{}  (size {}): \n [",  name, size);
         for (int i = 0; i < size; ++i) {
-            std::cout << kernel[i];
-            if (i < size-1) std::cout << ", ";
+            LOG_NNL(DEBUG, "{}",  kernel[i]);
+            if (i < size-1) LOG_NNL(DEBUG, ", ");
         }
-        std::cout << "]" << std::endl;
+        LOG_NNL(DEBUG, "]\n");
     }
 
     // Sobel operator implemented using separable convolution
@@ -63,6 +64,7 @@ namespace {
         const float* kernel_smooth = get_kernel(0, kernel_size);  // Smoothing kernel
         // Add kernel pointer validation
         if (!kernel_deriv || !kernel_smooth) {
+            LOG(ERROR, "Failed to generate kernels. Possible invalid config");
             throw std::runtime_error(
                 "Failed to generate kernels. Possible invalid config");
         }
@@ -148,13 +150,17 @@ namespace {
 
 namespace cpu {
     Image sobel_edge_detect(const Image& input, int dx, int dy, int kernel_size) {
+        LOG(DEBUG, "CPU: Starting Sobel edge detection.");
         if (dx < 0 || dx > 1 || dy < 0 || dy > 1) {
+            LOG(ERROR, "Invalid derivative order: dx and dy must be either 0 or 1");
             throw std::invalid_argument("dx and dy must be either 0 or 1");
         }
         if (dx == 0 && dy == 0) {
+            LOG(ERROR, "Invalid derivative order: At least one of dx or dy must be 1");
             throw std::invalid_argument("At least one of dx or dy must be 1");
         }
         if (kernel_size % 2 == 0 || kernel_size < 1 || kernel_size > 7) {
+            LOG(ERROR, "Kernel size must be 1, 3, 5, or 7");
             throw std::invalid_argument("Kernel size must be 1, 3, 5, or 7");
         }
 
@@ -165,6 +171,7 @@ namespace cpu {
         const auto width = input.width();
         const auto height = input.height();
         if (width < kernel_size || height < kernel_size) {
+            LOG(ERROR, "Image dimensions must be at least kernel_size x kernel_size");
             throw std::invalid_argument(
                 "Image dimensions must be at least kernel_size x kernel_size");
         }
@@ -184,7 +191,7 @@ namespace cpu {
         apply_sobel(source_data, output.data(), width, height, 
                    dx, dy, kernel_size);
         
-        std::cout << "CPU Sobel edge detect done." << std::endl;
+        LOG(DEBUG, "CPU Sobel edge detect done.");
         return output;
     }
 } // namespace cpu

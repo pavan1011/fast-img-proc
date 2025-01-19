@@ -1,4 +1,5 @@
 #include "cpu/grayscale.h"
+#include "logging/logging.h"
 #include <execution>
 #include <iostream>
 #include <vector>
@@ -6,10 +7,13 @@
 namespace cpu {
 
     Image grayscale(const Image& input) {
+        LOG(DEBUG, "CPU: Starting Grayscale conversion.");
         // TODO: Remove throw and return error code instead.
         if (input.channels() == 1){
+            LOG(ERROR, "Input image has only 1 channel. Is it already grayscale?");
             throw std::runtime_error("Input image has only 1 channel. Already grayscale?");
         }else if(input.channels() != 3) {
+            LOG(ERROR, "Input image must have at least 3 channels");
             throw std::runtime_error("Image must have at least 3 channels");
         }
                 
@@ -32,7 +36,7 @@ namespace cpu {
                 );
             });
 
-        std::cout << "CPU: Grayscale conversion done." << std::endl;
+        LOG(DEBUG, "CPU: Grayscale conversion done.");
         
         return output;
     }
