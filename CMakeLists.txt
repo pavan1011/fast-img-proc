@@ -6,7 +6,7 @@ project(fast_img_proc
 # Configure version header to build directory
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/version.h.in
-    ${PROJECT_BINARY_DIR}/include/version.h
+    ${CMAKE_CURRENT_BINARY_DIR}/include/version.h
     @ONLY
 )
 set(CMAKE_CXX_STANDARD 20)
@@ -62,8 +62,30 @@ find_package(TBB REQUIRED)
 find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/nanobind)
 
+# Documentation option
+option(BUILD_DOCUMENTATION "Build documentation with Doxygen" OFF)
+
 # Add project fast-img-proc/src subdirectory
 add_subdirectory(src)
+
+# Documentation configuration
+if(BUILD_DOCUMENTATION)
+    find_package(Doxygen)
+    if(DOXYGEN_FOUND)
+        set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/docs)
+        
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in
+                      ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+        
+        add_custom_target(docs
+            COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            COMMENT "Generating API documentation with Doxygen"
+            VERBATIM)
+    else()
+        message(STATUS "Doxygen not found, documentation will not be built")
+    endif()
+endif()
 
 # Create main executable
 add_executable(fast_img_proc main.cpp)

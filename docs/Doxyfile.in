@@ -1,0 +1,113 @@
+# Project settings
+PROJECT_NAME           = "fast-img-proc"
+PROJECT_NUMBER        = @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@
+PROJECT_BRIEF         = "Fast Image Processing Library "
+OUTPUT_DIRECTORY      = @DOXYGEN_OUTPUT_DIR@
+CREATE_SUBDIRS        = NO
+ALLOW_UNICODE_NAMES   = YES
+
+# Build settings
+EXTRACT_ALL           = YES
+EXTRACT_PRIVATE       = YES
+EXTRACT_STATIC        = YES
+EXTRACT_LOCAL_CLASSES = YES
+
+# Input files
+INPUT                 = @CMAKE_SOURCE_DIR@/README.md @CMAKE_SOURCE_DIR@/include @CMAKE_SOURCE_DIR@/src
+FILE_PATTERNS         = *.h *.cpp *.cu *.cuh
+RECURSIVE             = YES
+EXCLUDE_PATTERNS      = */build/* */test/*
+
+# Output settings
+GENERATE_HTML         = YES
+GENERATE_LATEX        = NO
+HTML_OUTPUT           = html
+HTML_FILE_EXTENSION   = .html
+MARKDOWN_SUPPORT = YES
+USE_MDFILE_AS_MAINPAGE = @CMAKE_SOURCE_DIR@/README.md
+
+# HTML styling
+HTML_EXTRA_STYLESHEET = @CMAKE_SOURCE_DIR@/docs/doxygen-awesome.css \
+                       @CMAKE_SOURCE_DIR@/docs/doxygen-awesome-sidebar-only.css
+HTML_FOOTER = @CMAKE_SOURCE_DIR@/docs/footer.html
+
+HTML_COLORSTYLE      = LIGHT
+HTML_COLORSTYLE_HUE  = 220
+HTML_COLORSTYLE_SAT  = 100
+HTML_COLORSTYLE_GAMMA = 80
+
+# Diagram settings
+HAVE_DOT             = YES
+UML_LOOK             = YES
+TEMPLATE_RELATIONS   = YES
+CALL_GRAPH           = YES
+CALLER_GRAPH         = YES
+DOT_IMAGE_FORMAT     = svg
+INTERACTIVE_SVG      = YES
+DOT_GRAPH_MAX_NODES  = 100
+MAX_DOT_GRAPH_DEPTH  = 0
+DOT_TRANSPARENT      = YES
+
+# Search settings
+SEARCHENGINE         = YES
+SERVER_BASED_SEARCH  = NO
+
+# Source browsing
+SOURCE_BROWSER       = YES
+INLINE_SOURCES       = NO
+STRIP_CODE_COMMENTS  = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION  = YES
+REFERENCES_LINK_SOURCE = YES
+
+# Class diagrams
+CLASS_DIAGRAMS       = YES
+CLASS_GRAPH          = YES
+COLLABORATION_GRAPH  = YES
+INCLUDE_GRAPH        = YES
+INCLUDED_BY_GRAPH    = YES
+GRAPHICAL_HIERARCHY  = YES
+DIRECTORY_GRAPH      = YES
+
+# Preprocessing
+ENABLE_PREPROCESSING = YES
+MACRO_EXPANSION      = YES
+EXPAND_ONLY_PREDEF   = NO
+SEARCH_INCLUDES      = YES
+
+# Message settings
+QUIET                = NO
+WARNINGS             = YES
+WARN_IF_UNDOCUMENTED = YES
+WARN_IF_DOC_ERROR    = YES
+WARN_NO_PARAMDOC     = NO
+
+# Input encoding
+INPUT_ENCODING       = UTF-8
+
+# Output language
+OUTPUT_LANGUAGE      = English
+
+# Alphabetical class index
+ALPHABETICAL_INDEX   = YES
+
+# Member grouping
+DISTRIBUTE_GROUP_DOC = NO
+GROUP_NESTED_COMPOUNDS = NO
+SUBGROUPING          = YES
+
+# File output options
+TOC_INCLUDE_HEADINGS = 5
+GENERATE_TREEVIEW    = YES
+FULL_SIDEBAR         = YES
+
+# External references
+GENERATE_TAGFILE     = 
+ALLEXTERNALS         = NO
+EXTERNAL_GROUPS      = YES
+EXTERNAL_PAGES       = YES
+
+# Example settings
+EXAMPLE_PATH         = 
+EXAMPLE_PATTERNS     = *
+EXAMPLE_RECURSIVE    = NO
