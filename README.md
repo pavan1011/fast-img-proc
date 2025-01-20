@@ -49,7 +49,7 @@ cmake -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3 -S ../ -B 
 
 - ```-DCMAKE_CUDA_COMPILER```: path to CUDA compiler. Required if ```-DUSE_CUDA``` is set to ON. Usually at ```/usr/local/cuda-<version>/bin/nvcc```
 
-- ```-DCUDA_TOOLKIT_ROOT_DIR```: path to CUDA toolkit. Required if ```-DUSE_CUDA``` is set to ON. Usually at ```/usr/local/cuda-<version>/bin/nvcc```
+- ```-DCUDA_TOOLKIT_ROOT_DIR```: path to CUDA toolkit. Required if ```-DUSE_CUDA``` is set to ON. Usually at ```/usr/local/cuda-<version>```
 
 
 ### Configure with CUDA support
@@ -73,9 +73,9 @@ export PYTHONPATH=$PYTHONPATH:/path/to/lib/directory
 
 ## Usage in Python
 
-Detailed examples with profiling data shown in ```fast_img_proc/scripts```. Below is the basic usage.
+Detailed examples along with performance profiling shown in ```fast_img_proc/scripts```. 
 
-
+Below is the basic usage:
 
 ```python
 #  fast-img-proc exposed as fast_image_processing using nanobind
@@ -90,78 +90,42 @@ def main():
     print(f"GPU Available: {fip.is_gpu_available()}")
     print(f"Active Hardware: {fip.get_active_hardware()}")
 
-    #####################################################################
-    ########### Examples showing automatic hardware selection ###########
-    #####################################################################
-    
+    # Examples using automatic hardware selection
+
     # Convert to grayscale using automatic hardware selection (default)
     auto_grayscale = fip.grayscale(input_image)
-    
     # Save resultant grayscale image
     auto_grayscale.save("grayscale_auto.png")
 
-    auto_blur = fip.blur(input_image)
-    auto_blur.save("grayscale_auto.png")
-
+    # Apply histogram equalization using automatic hardware selection (default)
     auto_equalize_histogram = fip.equalize_histogram(input_image)
     auto_equalize_histogram.save("blur_auto.png")
 
-    auto_gaussian_blur = fip.gaussian_blur(input_image, kernel_size=3, sigma=1.4f)
-    auto_gaussian_blur.save("blur_auto.png")
+    # Apply Gaussian blur using automatic hardware selection (default)
+    auto_blur = fip.blur(input_image)
+    auto_blur.save("grayscale_auto.png")
+    
+    # Apply Sobel edge detection using automatic hardware selection (default)
 
+    # Derivative on x-axis, smoothing on y-axis, kernel_size = 5x5
     auto_edge_detect_1_0_5 = edge_detect(input_image, 1, 0, 5, fip.Hardware.CPU)
     auto_edge_detect.save("auto_edge_detect_1_0_5.png")
 
-    
+    # Examples using CPU
+
     # Convert to grayscale on CPU
     cpu_grayscale = fip.grayscale(input_image, fip.Hardware.CPU)
     cpu_grayscale.save("grayscale_cpu.png")
 
-    # Equalize Histogram for RGB image on CPU
+    # Equalize Histogram of an RGB image on CPU
     cpu_hist_equalized_rgb = fip.equalize_histogram(input_image, fip.Hardware.CPU)
     cpu_hist_equalized_rgb.save("hist_equalized_rgb_cpu.png")
-    
-    # Equalize Histogram for Grayscale image on CPU
+
+    # Equalize Histogram of a grayscale image on CPU
     cpu_hist_equalized_gray = fip.equalize_histogram(cpu_grayscale, fip.Hardware.CPU)
     cpu_hist_equalized_gray.save("hist_equalized_gray_cpu.png")
 
-
-    # Convert to grayscale image using GPU
-    try:
-        gpu_grayscale = fip.grayscale(input_image, fip.Hardware.GPU)
-        gpu_grayscale.save("grayscale_gpu.png")
-    except RuntimeError as ex:
-        printf(f"GPU processing failed: {ex}")
-
-    # Convert to grayscale image using GPU
-    try:
-        gpu_grayscale = fip.grayscale(input_image, fip.Hardware.GPU)
-        gpu_grayscale.save("grayscale_gpu.png")
-    except RuntimeError as ex:
-        printf(f"GPU processing failed: {ex}")
-
-    # Convert to blurred image using GPU
-        try:
-            gpu_grayscale = fip.grayscale(input_image, fip.Hardware.GPU)
-            gpu_grayscale.save("grayscale_gpu.png")
-        except RuntimeError as ex:
-            printf(f"GPU processing failed: {ex}")
-
-        # Convert to grayscale image using GPU
-        try:
-            gpu_grayscale = fip.grayscale(input_image, fip.Hardware.GPU)
-            gpu_grayscale.save("grayscale_gpu.png")
-    except RuntimeError as ex:
-    
-    # Equalize Histogram for RGB image on CPU
-    cpu_hist_equalized_rgb = fip.equalize_histogram(input_image, fip.Hardware.CPU)
-    cpu_hist_equalized_rgb.save("hist_equalized_rgb_cpu.png")
-    # Blur image on CPU
-    cpu_blur = fip.blur(input_image, 5, 1.4, fip.Hardware.CPU)
-    cpu_blur.save("blur_cpu.png")
-
     # Edge detection on CPU
-    # Derivatives on x-axis, smoothing on y-axis, kernel_size = 5
     cpu_edge_1_0_5 = fip.edge_detect(input_image, 1, 0, 5, fip.Hardware.CPU)
     cpu_edge_1_0_5.save("edge_1_0_5_cpu.png")
 
@@ -172,6 +136,26 @@ def main():
     # Derivatives on x-axis and y axis, kernel_size = 5
     cpu_edge_1_1_5 = fip.edge_detect(input_image, 0, 1, 5, fip.Hardware.CPU)
     cpu_edge_1_1_5.save("edge_0_1_5_cpu.png")
+
+    # Convert to grayscale image using GPU
+    try:
+        gpu_grayscale = fip.grayscale(input_image, fip.Hardware.GPU)
+        gpu_grayscale.save("grayscale_gpu.png")
+    except RuntimeError as ex:
+        printf(f"GPU processing failed: {ex}")
+
+    # Edge detection on GPU
+    # Derivatives on x-axis, smoothing on y-axis, kernel_size = 5x5
+    gpu_edge_1_0_5 = fip.edge_detect(input_image, 1, 0, 5, fip.Hardware.GPU)
+    gpu_edge_1_0_5.save("edge_1_0_5_gpu.png")
+
+    # Smoothing on x-axis, derivative on y-axis, kernel_size = 5x5
+    gpu_edge_0_1_5 = fip.edge_detect(input_image, 0, 1, 5, fip.Hardware.GPU)
+    gpu_edge_0_1_5.save("edge_0_1_5_gpu.png")
+
+    # Derivative on x and y axis, kernel_size = 5x5
+    gpu_edge_1_1_5 = fip.edge_detect(input_image, 0, 1, 5, fip.Hardware.GPU)
+    gpu_edge_1_1_5.save("edge_0_1_5_gpu.png")
 ```
 
 
