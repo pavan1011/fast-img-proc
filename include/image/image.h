@@ -1,3 +1,8 @@
+/**
+ * @file image.h
+ * @brief Core image processing class definition
+*/
+
 #ifndef IMAGE_H
 #define IMAGE_H
 
@@ -5,8 +10,20 @@
 #include <memory>
 #include <vector>
 
+/**
+ * @class Image
+ * @brief Main class for image representation and manipulation
+ * 
+ * This class provides the core functionality for loading, 
+ * representing, and saving images.
+ */
 class Image {
 public:
+    /**
+     * @brief Constructs an image from file
+     * @param filename Path to the image file
+     * @throws std::runtime_error If file cannot be loaded
+     */
     Image(const std::string& filepath);
     Image(uint32_t width, uint32_t height, uint8_t channels);
     ~Image();
