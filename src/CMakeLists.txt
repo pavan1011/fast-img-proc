@@ -24,20 +24,27 @@ target_link_libraries(image_lib
 )
 
 if(USE_CUDA)
-    target_sources(image_lib PRIVATE
-        gpu/grayscale.cu
-        gpu/sobel_edge_detect.cu
+    target_sources(image_lib 
+        PRIVATE
+            gpu/grayscale.cu
+            gpu/sobel_edge_detect.cu
     )
     set_source_files_properties(
         gpu/grayscale.cu
         gpu/sobel_edge_detect.cu
         PROPERTIES CUDA_SOURCE_PROPERTY_FORMAT OBJ
     )
-    set_target_properties(image_processing_cuda PROPERTIES
-        // Allow function calls between .cu files
+    set_target_properties(image_lib PROPERTIES
+        # Allow function calls between .cu files
         CUDA_SEPARABLE_COMPILATION ON
         CUDA_STANDARD 20
         CUDA_STANDARD_REQUIRED ON
     )
+    target_link_libraries(image_lib 
+        PRIVATE 
+            project_options
+            logging
+    )
+
     target_compile_features(image_lib PUBLIC cuda_std_20)
 endif()

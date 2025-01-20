@@ -1,15 +1,20 @@
 #include "gpu/sobel_edge_detect.cuh"
 #include "gpu/grayscale.cuh"
+#include "logging/logging.h"
 #include <cuda_runtime.h>
 #include <stdexcept>
 #include <array>
 #include <iostream>
 
+
 // Helper macro for CUDA error checking
 #define CUDA_CHECK(call) do { \
     cudaError_t err = call; \
     if (err != cudaSuccess) { \
-        LOG(ERROR, "CUDA error: {}", cudaGetErrorString(err)); \
+        std::string error_msg = std::string(__FILE__) + \
+                               " line " + std::to_string(__LINE__) + ": " + \
+                               cudaGetErrorString(err); \
+        LOG(ERROR, "CUDA error: {}", error_msg); \
         throw std::runtime_error(error_msg); \
     } \
 } while(0)
@@ -275,6 +280,7 @@ namespace gpu {
             return output;
 
         } catch (...) {
+            // Prevent memory leaks in case any unhandled exception occurs
             if (tex_input) cudaDestroyTextureObject(tex_input);
             if (d_array) cudaFreeArray(d_array);
             if (d_output) cudaFree(d_output);

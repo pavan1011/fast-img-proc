@@ -46,8 +46,9 @@ namespace processing {
                 try {
                     return gpu::grayscale(input);
                 } catch (const std::exception& e) {
-                    LOG(ERROR, "Error in grayscale operation! GPU processing failed {}:");
-                    LOG(WARN, "Falling back to CPU implementation.", e.what());
+                    std::string gpu_error =  e.what();
+                    LOG(WARN, "Error in grayscale operation! GPU processing failed {}:", gpu_error);
+                    LOG(WARN, "Falling back to CPU implementation.");
                     return cpu::grayscale(input);
                 }
                 #else
@@ -120,7 +121,8 @@ namespace processing {
                 try {
                     return gpu::sobel_edge_detect(input, dx, dy, kernel_size);
                 } catch (const std::exception& e) {
-                    LOG(WARN, "GPU processing failed:{} ", e.what());
+                    std::string gpu_error =  e.what();
+                    LOG(WARN, "GPU processing failed:{} ", gpu_error);
                     LOG(WARN," Using CPU instead");
                     return cpu::sobel_edge_detect(input, dx, dy, kernel_size);
                 }
