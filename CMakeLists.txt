@@ -43,9 +43,6 @@ else()
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif()
 
-# Required for logging
-find_package(fmt CONFIG REQUIRED)
-
 # CUDA Optional
 option(USE_CUDA "Enable CUDA support" OFF)
 

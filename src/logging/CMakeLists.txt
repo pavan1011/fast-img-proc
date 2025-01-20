@@ -30,7 +30,6 @@ target_link_libraries(logging
     PUBLIC
         Threads::Threads
         project_options
-        fmt::fmt
 )
 
 # Set properties
