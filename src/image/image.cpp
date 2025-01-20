@@ -10,6 +10,9 @@
 #include <stdexcept>
 #include <iostream>
 
+// Fix max width and height of images
+constexpr const int MAX_WH = UINT32_MAX/2;
+
 Image::Image(const std::string& filepath) {
     int width, height, channels;
     unsigned char* data = stbi_load(filepath.c_str(), &width, &height, &channels, 0);
@@ -28,8 +31,25 @@ Image::Image(const std::string& filepath) {
     m_data = std::unique_ptr<unsigned char[]>(data);
 }
 
-Image::Image(u_int32_t width, u_int32_t height, u_int8_t channels)
-    : m_width(width), m_height(height), m_channels(channels) {
+Image::Image(uint32_t width, uint32_t height, uint8_t channels) {
+    
+    // Input Validation for channels
+    if(channels != 1 && channels != 3){
+        LOG(ERROR, "Failed to create image: Only grayscale and RGB supported. "
+                    "No. of channels must be 1 or 3.");
+        throw std::invalid_argument("No. of channels must be 1 or 3.");
+    }
+    if (width > MAX_WH || height > MAX_WH){
+        LOG(ERROR, "Failed to create image with dimensions width: {} x height: {} ",
+                    width, height);
+        LOG(ERROR, "Max supported height or width : {}", MAX_WH);
+        throw std::invalid_argument("width or height too large");
+    }
+    m_width = width;
+    m_height = height;
+    m_channels = channels;
+    LOG(DEBUG, "Constructing Image() from width, height, channels");
+    LOG(DEBUG, "wdith:{}, height:{}, channels:{}", width, height, channels);
     m_data = std::make_unique<unsigned char[]>(width * height * channels);
 }
 
