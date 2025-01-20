@@ -1,18 +1,25 @@
 # ```fast-img-proc```: A fast image processing library
 
-A fast and memory-efficient image processing library utilizing parallel programming on CPU implemented in C++, with GPU acceleration capabilities using CUDA. Python bindings via ```nanobind``` provide a Pythonic interface to the library. Supported image processing operations are:
+A fast and memory-efficient image processing library utilizing parallel programming on CPU implemented in C++, with GPU acceleration capabilities using CUDA. Bindings generated using ```nanobind``` provide a Pythonic interface to the library. 
+
+The supported image processing operations are:
 
 - Grayscale Conversion
 - Histogram Equalization
 - Edge Detection
 - Blur
 
-## Required Packages
+The supported image formats are:
+- PNG
+- JPG
 
-- **FMT** (required): ```sudo apt install libfmt-dev``` [[github link](https://github.com/fmtlib/fmt)]
-- **TBB** (required): ```sudo apt-get install libtbb-dev``` [[github link](https://github.com/ibaned/tbb)]
-- **Python 3.7+** (required) : ```sudo apt install python3.7-dev``` [[github link](https://github.com/python/cpython)]
-- **nanobind** (required): Included in ```src/external/nanobind``` [[github link](https://github.com/wjakob/nanobind)]
+
+## Required Software Packages
+- **C++ (required)**: compiler that supports C++20
+- **CMake 3.18+ (required)** : ```sudo apt-get -y install cmake```
+- **Python 3.7+ (required)**  : ```sudo apt install python3.7-dev``` [[github link](https://github.com/python/cpython)]
+- **TBB (required)** : ```sudo apt-get install libtbb-dev``` [[github link](https://github.com/ibaned/tbb)]
+- **nanobind (required)** : included as a git submodule in ```src/external/nanobind``` [[github link](https://github.com/wjakob/nanobind)]
 - **CUDA Toolkit & Driver** (optional):  [NVIDIA Installation guide](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=24.04&target_type=deb_local)
 
 ## Installing ```fast-img-proc```
@@ -30,7 +37,7 @@ cmake -S ../ -B .
 **translates to**
 
 ```bash
-cmake -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3 -S ../ -B .
+cmake -DCMAKE_BUILD_TYPE=Release -S ../ -B .
 ```
 
 #### CMake Build Flags
@@ -42,9 +49,9 @@ cmake -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3 -S ../ -B 
     - Verbose: info, warn, error logs
     - Release: warn and error logs only
 
-- ```-DPYTHON_EXECUTABLE```: provides a hint to the CMake build system to help it find a specific version of Python. Useful if you want to point the build to a virtual environment or if Python is installed in a different directory instead of ```/usr/bin/python3```
-
 - ```-DUSE_CUDA```: optionally enables GPU acceleration for supported image processing algorithms
+
+- ```-DBUILD_DOCUMENTATION```: optionally enables detailed documentation generation locally using Doxygen 
 
 
 - ```-DCMAKE_CUDA_COMPILER```: path to CUDA compiler. Required if ```-DUSE_CUDA``` is set to ON. Usually at ```/usr/local/cuda-<version>/bin/nvcc```
@@ -58,10 +65,12 @@ Requires CUDA compiler installed
 ```bash
 cmake -S ../ -B . -DUSE_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc
 ```
+
 ### Build ```fast-img-proc```
 ```bash
 cmake --build .
 ```
+
 Following the above steps generates ```fast_image_processing.cpython-<python-version>-<arch>-<platform>.so``` in ```/path/to/fast-img-proc/build```
 
 #### Update PYTHONPATH
@@ -158,5 +167,54 @@ def main():
     gpu_edge_1_1_5.save("edge_0_1_5_gpu.png")
 ```
 
+## Detailed Documentation
+
+A detailed version of documentation of the source files, including class and member definitions, function signatures, and other implementation details can be generated locally using this project's source files.
+
+### Install Doxygen and graphviz
+
+```bash
+sudo apt-get install doxygen graphviz
+```
+
+### Configure build to generate docs
+
+```bash
+cd fast-img-proc && mkdir build_docs && cd build_docs
+cmake -S ../ -B . -DBUILD_DOCUMENTATION=ON 
+```
+
+### Build Documentation
+```bash
+cmake --build . --target docs
+```
+
+This will generate detailed documentation which can be viewed by opening ```fast-img-proc/build_docs/docs/html/html.index```.
+
+## Credits
+
+### Image Loading and Saving
+
+The ```stb``` library from https://github.com/nothings/stb (MIT and Public Domain licenses) was used to populate ```fast-img-proc/external/stb```.
+
+- `stb_image.h`: used to load images and represent them as buffers for further processing.
+- `stb_image_write.h`: used to save images after processing.
+
+### Python Bindings
+
+The ```nanobind``` library from https://github.com/wjakob/nanobind (BSD-3-Clause license) was used to generate pythonic bindings to ```fast-img-proc``` C++ library.
+
+### Detailed Documentation
+
+The detailed documentation is generated locally using ```Doyxgen```: https://www.doxygen.nl/index.html.
+
+The ```graphviz``` library from https://github.com/graphp/graphviz (MIT license) was used to generate dependency diagrams from this project's source files.
+
+The ```doxygen-awesome-css``` library from https://github.com/jothepro/doxygen-awesome-css (MIT license) was used for custom styling in this documentation, namely: 
+
+- ```fast-img-proc/docs/doxygen-awesome-sidebar-only.css```
+- ```fast-img-proc/docs/doxygen-awesome.css```
+
+**My special thanks to the authors and contributors of all the above libraries.**
 
 
