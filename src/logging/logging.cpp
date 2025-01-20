@@ -33,25 +33,6 @@ void Logger::process_log_queue() {
 
 void Logger::output_log(const LogMessage& msg) {
     auto timestamp = std::chrono::system_clock::now();
-
-    if (msg.level == LogLevel::WARN || msg.level == LogLevel::ERROR) {
-        if (!msg.newline){
-            log_file << msg.message;
-            std::cerr << msg.message;
-        }else{
-            auto formatted = std::format("[{}] [{}] {} v{} : {} \n",
-                level_to_string(msg.level),
-                std::format("{:%Y-%m-%d %H:%M:%S}", timestamp),
-                std::string(PROJECT_NAME),
-                std::string(PROJECT_VERSION_STRING),
-                msg.message
-            );
-            log_file << formatted;
-            log_file.flush();
-            std::cerr << formatted;
-        }
-        
-    } else {
         if (!msg.newline){
             log_file << msg.message;
             std::cerr << msg.message;
@@ -66,7 +47,6 @@ void Logger::output_log(const LogMessage& msg) {
             log_file.flush();
             std::cout << formatted;
         }
-    }    
 }
 
 bool Logger::should_log(LogLevel level) const {
