@@ -58,6 +58,8 @@ cmake -DCMAKE_BUILD_TYPE=Release -S ../ -B .
 
 - ```-DCUDA_TOOLKIT_ROOT_DIR```: path to CUDA toolkit. Required if ```-DUSE_CUDA``` is set to ON. Usually at ```/usr/local/cuda-<version>```
 
+- ```-DPYTHON_EXECUTABLE``` provides a hint to the CMake build system to help it find a specific version of Python (for virtual environments and non-default python installations).
+
 
 ### Configure with CUDA support
 Requires CUDA compiler installed
