@@ -1,5 +1,5 @@
 #include "gpu/sobel_edge_detect.cuh"
-#include "gpu/grayscale.cuh"
+#include "cpu/grayscale.h"
 #include "logging/logging.h"
 #include <cuda_runtime.h>
 #include <stdexcept>
@@ -169,6 +169,12 @@ namespace {
 }
 
 namespace gpu {
+    bool is_available() {
+        int deviceCount = 0;
+        cudaGetDeviceCount(&deviceCount);
+        return deviceCount > 0;
+    }
+    
     Image sobel_edge_detect(const Image& input, int dx, int dy, int kernel_size) {
         LOG(DEBUG, "GPU: Starting Sobel edge detection.");
         if (!is_available()) {
@@ -206,7 +212,7 @@ namespace gpu {
         if (input.channels() == 1) {
             source_data = input.data();
         } else {
-            gray_image = gpu::grayscale(input);  // Creates new Image
+            gray_image = cpu::grayscale(input);  // Creates new Image
             source_data = gray_image.data();
         }
 

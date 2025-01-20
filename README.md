@@ -146,26 +146,35 @@ def main():
     cpu_edge_1_1_5 = fip.edge_detect(input_image, 0, 1, 5, fip.Hardware.CPU)
     cpu_edge_1_1_5.save("edge_0_1_5_cpu.png")
 
-    # Convert to grayscale image using GPU
     try:
-        gpu_grayscale = fip.grayscale(input_image, fip.Hardware.GPU)
-        gpu_grayscale.save("grayscale_gpu.png")
+        # Edge detection on GPU
+        # Derivatives on x-axis, smoothing on y-axis, kernel_size = 5x5
+        gpu_edge_1_0_5 = fip.edge_detect(input_image, 1, 0, 5, fip.Hardware.GPU)
+        gpu_edge_1_0_5.save("edge_1_0_5_gpu.png")
+
+        # Smoothing on x-axis, derivative on y-axis, kernel_size = 5x5
+        gpu_edge_0_1_5 = fip.edge_detect(input_image, 0, 1, 5, fip.Hardware.GPU)
+        gpu_edge_0_1_5.save("edge_0_1_5_gpu.png")
+
+        # Derivative on x and y axis, kernel_size = 5x5
+        gpu_edge_1_1_5 = fip.edge_detect(input_image, 0, 1, 5, fip.Hardware.GPU)
+        gpu_edge_1_1_5.save("edge_0_1_5_gpu.png")
+    
     except RuntimeError as ex:
         printf(f"GPU processing failed: {ex}")
 
-    # Edge detection on GPU
-    # Derivatives on x-axis, smoothing on y-axis, kernel_size = 5x5
-    gpu_edge_1_0_5 = fip.edge_detect(input_image, 1, 0, 5, fip.Hardware.GPU)
-    gpu_edge_1_0_5.save("edge_1_0_5_gpu.png")
 
-    # Smoothing on x-axis, derivative on y-axis, kernel_size = 5x5
-    gpu_edge_0_1_5 = fip.edge_detect(input_image, 0, 1, 5, fip.Hardware.GPU)
-    gpu_edge_0_1_5.save("edge_0_1_5_gpu.png")
-
-    # Derivative on x and y axis, kernel_size = 5x5
-    gpu_edge_1_1_5 = fip.edge_detect(input_image, 0, 1, 5, fip.Hardware.GPU)
-    gpu_edge_1_1_5.save("edge_0_1_5_gpu.png")
 ```
+## Testing
+
+```bash
+cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE=<path-to-python> -DUSE_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc -S ../ -B .
+```
+
+```bash
+cmake --build . --target cpp_tests
+```
+
 
 ## Detailed Documentation
 

@@ -4,7 +4,6 @@
 #include "cpu/gauss_blur.h"
 #include "cpu/sobel_edge_detect.h"
 #include "logging/logging.h"
-#include "gpu/grayscale.cuh"
 #include "gpu/sobel_edge_detect.cuh"
 #include <iostream>
 
@@ -37,30 +36,21 @@ namespace processing {
     Image grayscale(const Image& input, Hardware hardware) {
         hardware = resolve_hardware(hardware);
         
-        switch (hardware) {
+        switch(hardware) {
             case Hardware::CPU:
                 return cpu::grayscale(input);
-                
+
             case Hardware::GPU:
-                #ifdef USE_CUDA
-                try {
-                    return gpu::grayscale(input);
-                } catch (const std::exception& e) {
-                    std::string gpu_error =  e.what();
-                    LOG(WARN, "Error in grayscale operation! GPU processing failed {}:", gpu_error);
-                    LOG(WARN, "Falling back to CPU implementation.");
-                    return cpu::grayscale(input);
-                }
-                #else
-                LOG(WARN, "GPU support not compiled. Using CPU."
-                          "Falling back to CPU implementation.");
+                // TODO: Enable CUDA implementation
+                LOG(WARN, "GPU support not yet enabled for this operation."
+                        " Using CPU instead");
                 return cpu::grayscale(input);
-                #endif
-                
+
             default:
                 // TODO: Remove throw and return error code instead.
-                LOG(ERROR, "Grayscale: invalid hardware option."
-                           "Supported: Hardware::CPU, Hardware::GPU, Hardware::AUTO");
+                LOG(ERROR, 
+                    "Equalize Histogram: invalid hardware option."
+                    "Supported: Hardware::CPU, Hardware::GPU, Hardware::AUTO");
                 throw std::runtime_error("Invalid hardware option");
         }
     }

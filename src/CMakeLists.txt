@@ -26,11 +26,9 @@ target_link_libraries(image_lib
 if(USE_CUDA)
     target_sources(image_lib 
         PRIVATE
-            gpu/grayscale.cu
             gpu/sobel_edge_detect.cu
     )
     set_source_files_properties(
-        gpu/grayscale.cu
         gpu/sobel_edge_detect.cu
         PROPERTIES CUDA_SOURCE_PROPERTY_FORMAT OBJ
     )
