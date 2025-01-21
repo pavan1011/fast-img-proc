@@ -13,6 +13,10 @@ The supported image formats are:
 - PNG
 - JPG
 
+Supported platforms are:
+- Linux
+- macOS
+
 
 ## Required Software Packages
 - **C++ (required)**: compiler that supports C++20
@@ -279,6 +283,44 @@ cmake -DCMAKE_BUILD_TYPE=<build-type> -DUSE_CUDA=ON -DPYTHON_EXECUTABLE=<path-to
 
 cmake --build .
 ```
+## Benchmark comparing CPU vs GPU Implementation
+
+### Sobel Edge Detection
+Currently, only Sobel edge detection is supported to run on GPU. 
+
+The benchmarking script can be run locally from ```fast-img-proc/scripts/benchmark_edge_detect.py``` as follows:
+
+```bash
+cd fast-img-proc
+mkdir benchmark_results
+python3 ./scripts/benchmark_edge_detect.py <path/to/input_images> benchmark_results
+```
+
+This runs sobel edge detection and stores resulting images in ``benchmark_results`` and ``benchmark_results.csv`` in the current directory.
+
+Initial results suggests 3-5x improvement in runtimes when comparing CPU and GPU performance.
+
+
+### Benchmark Summary
+
+After benchmarking on images of following dimensions (w x h): 960 x 640, 2048 x 2048, 2400 x 2400,  3600 x 3600
+
+**Mean Speedup on GPU vs CPU by Kernel Size**:
+
+| kernel_size | Speedup factor |
+|-------------|----------------|
+|3            | 2.618503       |
+|5            | 4.269482       |
+|7            | 4.344540       |
+
+
+**Mean Speedup by Image Size:**:
+| Image Size   | Speedup factor |
+|--------------|----------------|
+|960 x 640     | 1.066113       |
+|2048 x 2048   | 5.513787       |
+|2400 x 2400   | 4.060035       |
+|3600 x 3600   | 4.336766       |
 
 ## Credits
 
