@@ -207,7 +207,7 @@ def main():
 ```
 ## Testing
 
-The default build runs with  disables building tests. However, if you want to enable them to run tests locally you can follow the below instructions.
+The default build disables building tests. However, if you want to enable them to run tests locally you can follow the below instructions.
 
 ### Install gtest
 
@@ -309,7 +309,7 @@ After benchmarking on images of different dimensions (w x h).
 
 | kernel_size | Speedup factor |
 |-------------|----------------|
-|3            | 2.618503       |
+|3            | 2.874725       |
 |5            | 5.568702       |
 |7            | 6.822060       |
 
