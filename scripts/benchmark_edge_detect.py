@@ -84,7 +84,7 @@ def plot_results(df):
     ax2.set_xscale('log')
     
     plt.tight_layout()
-    plt.savefig('edge_detection_benchmark.png')
+    plt.savefig(f'edge_detection_benchmark.png')
     plt.close()
 
 def main():
@@ -111,7 +111,7 @@ def main():
         
         # Plot results
         # TODO: Fix plotting
-        plot_results(results)
+        # plot_results(results)
         
         # Print summary statistics
         print("\nBenchmark Summary:")
