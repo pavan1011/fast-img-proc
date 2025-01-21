@@ -11,7 +11,7 @@
 #include <iostream>
 
 // Fix max width and height of images
-constexpr const int MAX_WH = UINT32_MAX/2;
+constexpr const int MAX_WH = UINT32_MAX >> 2;
 
 Image::Image(const std::string& filepath) {
     int width, height, channels;
