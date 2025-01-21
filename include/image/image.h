@@ -21,7 +21,7 @@ class Image {
 public:
     /**
      * @brief Constructs an image from file
-     * @param filename Path to the image file
+     * @param filepath Path to the image file to be loaded
      * @throws std::runtime_error If file cannot be loaded
      */
     Image(const std::string& filepath);
