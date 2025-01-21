@@ -8,7 +8,7 @@
 #include <iostream>
 namespace {
     constexpr uint32_t MIN_KERNEL_SIZE = 3;
-    constexpr uint32_t MAX_KERNEL_SIZE = 3;
+    constexpr uint32_t MAX_KERNEL_SIZE = UINT32_MAX >> 2;
 
     std::vector<float> create_gaussian_kernel(int size, float sigma) {
         std::vector<float> kernel(size);
