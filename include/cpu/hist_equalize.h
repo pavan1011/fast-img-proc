@@ -13,7 +13,7 @@ namespace cpu {
      * For grayscale images (1 channel): directly equalizes the intensity
      * For RGB images (3 channels): converts to YCrCb, equalizes Y component, converts back to RGB
      * 
-     * @param input Input image (must be 1 or 3 channels)
+     * @param input The input image of type Image::Image (must be 1 or 3 channels).
      * @return Equalized image with same dimensions and channels as input
      * @throws std::runtime_error if input image has invalid number of channels
      */

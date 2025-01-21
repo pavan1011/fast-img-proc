@@ -1,4 +1,4 @@
-# </code>fast-img-proc</code>: A fast image processing library
+# <code>fast-img-proc</code>: A fast image processing library
 
 A fast and memory-efficient image processing library utilizing parallel programming on CPU implemented in C++, with GPU acceleration capabilities using CUDA. Bindings generated using ```nanobind``` provide a Pythonic interface to the library. 
 
@@ -265,12 +265,12 @@ cd fast-img-proc && mkdir build_docs && cd build_docs
 cmake -S ../ -B . <your-build-flags> -DBUILD_DOCUMENTATION=ON
 ```
 
-### Build Documentation
+### Build documentation files locally
 ```bash
 cmake --build . --target docs
 ```
 
-This will generate detailed documentation which can be viewed by opening ```fast-img-proc/build_docs/docs/html/html.index```.
+This will generate detailed documentation which can be viewed by opening ```path/to/build_docs/docs/html/html.index```.
 
 ### Build ALL
 

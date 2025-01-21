@@ -6,8 +6,10 @@
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
-
 namespace {
+    constexpr uint32_t MIN_KERNEL_SIZE = 3;
+    constexpr uint32_t MAX_KERNEL_SIZE = 3;
+
     std::vector<float> create_gaussian_kernel(int size, float sigma) {
         std::vector<float> kernel(size);
         const int center = size / 2;
@@ -98,7 +100,7 @@ namespace cpu {
             LOG(ERROR, "Kernel size must be odd");
             throw std::invalid_argument("Kernel size must be odd.");
         }
-        if (kernel_size < 3 || kernel_size > 30) {
+        if (kernel_size < MIN_KERNEL_SIZE || kernel_size > MAX_KERNEL_SIZE) {
             // TODO: Test larger kernel size and enable if possible
             LOG(ERROR, "Kernel size supported: 3x3 up to 29x29");
             throw std::invalid_argument("Kernel size supported: 3x3 up to 29x29");
