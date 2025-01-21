@@ -207,7 +207,7 @@ def main():
 ```
 ## Testing
 
-The default build runs with  disables building tests. However, if you want to enable them to run tests locally you can follow the below instructions.
+The default build disables building tests. However, if you want to enable them to run tests locally you can follow the below instructions.
 
 ### Install gtest
 
