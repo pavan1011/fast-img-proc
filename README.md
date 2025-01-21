@@ -303,15 +303,15 @@ Initial results suggests 3-5x improvement in runtimes when comparing CPU and GPU
 
 ### Benchmark Summary
 
-After benchmarking on images of following dimensions (w x h): 960 x 640, 2048 x 2048, 2400 x 2400,  3600 x 3600
+After benchmarking on images of different dimensions (w x h). 
 
 **Mean Speedup on GPU vs CPU by Kernel Size**:
 
 | kernel_size | Speedup factor |
 |-------------|----------------|
 |3            | 2.618503       |
-|5            | 4.269482       |
-|7            | 4.344540       |
+|5            | 5.568702       |
+|7            | 6.822060       |
 
 
 **Mean Speedup by Image Size:**:
@@ -321,6 +321,8 @@ After benchmarking on images of following dimensions (w x h): 960 x 640, 2048 x 
 |2048 x 2048   | 5.513787       |
 |2400 x 2400   | 4.060035       |
 |3600 x 3600   | 4.336766       |
+|6200 x 6200   | 8.280872       |
+|11472 x 6429  | 12.940401      |
 
 ## Credits
 
