@@ -1,4 +1,13 @@
 cmake_minimum_required(VERSION 3.18)
+
+# Set policies for macOS
+if(APPLE)
+    # Enable RPATH support for macOS
+    set(CMAKE_MACOSX_RPATH ON)
+    # Ensure compatibility with macOS SDK
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS deployment version")
+endif()
+
 project(fast_img_proc 
         VERSION 1.0
         LANGUAGES CXX)
@@ -31,8 +40,25 @@ if(USE_CUDA)
     enable_language(CUDA)
     set(CMAKE_CUDA_STANDARD 20)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-    find_package(CUDA REQUIRED)
-    add_definitions(-DUSE_CUDA)
+    
+    if(APPLE)
+        # Check if running on Apple Silicon
+        execute_process(
+            COMMAND uname -m
+            OUTPUT_VARIABLE ARCH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(ARCH STREQUAL "arm64")
+            message(WARNING "CUDA is not supported on Apple Silicon (M1/M2) Macs")
+            set(USE_CUDA OFF)
+        endif()
+    endif()
+
+    #Check if USE_CUDA is still true
+    if(USE_CUDA)
+        find_package(CUDA REQUIRED)
+        add_definitions(-DUSE_CUDA)
+    endif()
 endif()
 
 # Setting Build Type for logging levels and perf measurement
@@ -51,11 +77,28 @@ target_compile_definitions(project_options INTERFACE
 # Debug build: disable optimization (O0), enable source debugging(-g) 
 # pass preprocessor macro DEBUG_BUILD
 # O2 medium optimization, O3 most optimal.
+# On MSVC: O2 = fastest
 if(MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi /DDEBUG_BUILD")
     set(CMAKE_CXX_FLAGS_VERBOSE "/O2 /DVERBOSE_BUILD")
-    set(CMAKE_CXX_FLAGS_PROFILE "/O3 /DPROFILE_BUILD")
+    set(CMAKE_CXX_FLAGS_PROFILE "/O2 /DPROFILE_BUILD")
     set(CMAKE_CXX_FLAGS_RELEASE "/O2")
+     
+    # Disable MSVC warnings about secure functions
+     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+     # Enable exception handling
+     add_definitions(/EHsc)
+elseif(APPLE)
+    # macOS specific flags
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -DDEBUG_BUILD")
+    set(CMAKE_CXX_FLAGS_VERBOSE "-O2 -DVERBOSE_BUILD")
+    set(CMAKE_CXX_FLAGS_PROFILE "-O3 -DPROFILE_BUILD")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+    
+    # Add visibility flags for better symbol handling
+    set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 else()
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -DDEBUG_BUILD")
     set(CMAKE_CXX_FLAGS_VERBOSE "-O2 -DVERBOSE_BUILD")
@@ -71,6 +114,18 @@ find_package(TBB REQUIRED)
 if(DEFINED PYTHON_EXECUTABLE)
     set(Python_EXECUTABLE ${PYTHON_EXECUTABLE})
 endif()
+
+# Python configuration for macOS
+if(APPLE)
+    # Ensure Python finds the correct framework
+    set(Python_FIND_FRAMEWORK LAST)
+    
+    # Handle universal binary builds
+    if(CMAKE_OSX_ARCHITECTURES)
+        set(Python_FIND_FRAMEWORK NEVER)
+    endif()
+endif()
+
 find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/nanobind)
 
@@ -147,9 +202,24 @@ endif()
 # Create main executable
 add_executable(fast_img_proc main.cpp)
 target_link_libraries(fast_img_proc PRIVATE image_lib)
+
+# Update library linking for macOS
+if(APPLE)
+    set_target_properties(fast_img_proc PROPERTIES
+        INSTALL_RPATH "@executable_path/../lib"
+        BUILD_WITH_INSTALL_RPATH TRUE
+    )
+endif()
+
 target_include_directories(fast_img_proc 
     PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${PROJECT_BINARY_DIR}/include
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/stb
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/stb
+    
+    # Update include directories for macOS frameworks
+    SYSTEM
+        $<$<PLATFORM_ID:Darwin>:/System/Library/Frameworks>
+
 )
