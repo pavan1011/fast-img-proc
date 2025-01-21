@@ -102,8 +102,8 @@ namespace cpu {
         }
         if (kernel_size < MIN_KERNEL_SIZE || kernel_size > MAX_KERNEL_SIZE) {
             // TODO: Test larger kernel size and enable if possible
-            LOG(ERROR, "Kernel size supported: 3x3 up to 29x29");
-            throw std::invalid_argument("Kernel size supported: 3x3 up to 29x29");
+            LOG(ERROR, "Kernel size supported: 3x3 up to {}x{}", MAX_KERNEL_SIZE, MAX_KERNEL_SIZE);
+            throw std::invalid_argument("Kernel size supported: 3x3 up to " + MAX_KERNEL_SIZE);
         }
 
         // Set default sigma based on kernel size if not specified.
