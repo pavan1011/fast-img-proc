@@ -1,4 +1,4 @@
-# ```fast-img-proc```: A fast image processing library
+# </code>fast-img-proc</code>: A fast image processing library
 
 A fast and memory-efficient image processing library utilizing parallel programming on CPU implemented in C++, with GPU acceleration capabilities using CUDA. Bindings generated using ```nanobind``` provide a Pythonic interface to the library. 
 
@@ -30,7 +30,7 @@ The supported image formats are:
 - **nanobind (required)** : included as a git submodule in ```src/external/nanobind``` [[github link](https://github.com/wjakob/nanobind)]
 - **CUDA Toolkit & Driver** (optional):  [NVIDIA Installation guide](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=24.04&target_type=deb_local)
 
-## Installing ```fast-img-proc```
+## Installing <code>fast-img-proc</code>
 
 ```bash
 git clone --recurse-submodules git@github.com:pavan1011/fast-img-proc
@@ -78,7 +78,7 @@ cmake -S ../ -B . -DUSE_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMA
 ```
 **NOTE**: The paths provided above ``/usr/local/cuda-12`` might be different on your machine. Update them with the paths specific to your CUDA configuration.
 
-### Build ```fast-img-proc```
+### Build <code>fast-img-proc</code>
 ```bash
 cmake --build .
 ```
@@ -216,7 +216,7 @@ sudo apt-get install libgtest-dev
 brew install googletest
 ```
 
-### Install ``pytest`` Python package
+### Install <code>pytest</code> Python package
 
 ```bash
 python3 -m pip install pytest

@@ -1,3 +1,7 @@
+/**
+ * @file logging.h
+ * @brief Interface to perform log messages based on build type
+*/
 #ifndef LOGGING_H
 #define LOGGING_H
 

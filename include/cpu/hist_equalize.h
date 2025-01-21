@@ -1,3 +1,7 @@
+/**
+ * @file hist_equalize.h
+ * @brief Interface to perform Histogram Equalization on CPU.
+*/
 #ifndef HIST_EQUALIZE_H
 #define HIST_EQUALIZE_H
 #include "image/image.h"

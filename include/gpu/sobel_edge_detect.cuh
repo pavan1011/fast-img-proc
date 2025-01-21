@@ -1,3 +1,7 @@
+/**
+ * @file sobel_edge_detect.cuh
+ * @brief Interface to perform Sobel Edge Detection GPU.
+*/
 #ifndef GPU_SOBEL_EDGE_DETECT_H
 #define GPU_SOBEL_EDGE_DETECT_H
 

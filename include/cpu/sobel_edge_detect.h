@@ -1,3 +1,7 @@
+/**
+ * @file sobel_edge_detect.h
+ * @brief Interface to perform Sobel Edge Detection CPU.
+*/
 #ifndef SOBEL_EDGE_DETECT_H
 #define SOBEL_EDGE_DETECT_H
 #include "image/image.h"

@@ -1,3 +1,7 @@
+/**
+ * @file grayscale.h
+ * @brief Interface to perform Grayscale Conversion on CPU.
+*/
 #ifndef CPU_GRAYSCALE_H
 #define CPU_GRAYSCALE_H
 

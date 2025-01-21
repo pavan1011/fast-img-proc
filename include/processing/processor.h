@@ -1,3 +1,7 @@
+/**
+ * @file sobel_edge_detect.cuh
+ * @brief Adapter to perform image processing on either CPU or GPU.
+*/
 #ifndef PROCESSOR_H
 #define PROCESSOR_H
 #include "image/image.h"

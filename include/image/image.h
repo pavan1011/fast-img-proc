@@ -1,6 +1,6 @@
 /**
  * @file image.h
- * @brief Core image processing class definition
+ * @brief Core Image class definition, used as input to processing functions.
 */
 
 #ifndef IMAGE_H
