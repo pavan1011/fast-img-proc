@@ -19,6 +19,8 @@
     } \
 } while(0)
 
+constexpr uint32_t KERNEL_BLK_DIM = 16;
+
 namespace {
     // Preset Sobel kernels
     // Derivative kernels (dx=1 or dy=1) for calculating gradient
@@ -266,7 +268,7 @@ namespace gpu {
             CUDA_CHECK(cudaMalloc(&d_output, width * height * sizeof(unsigned char)));
 
             // Launch kernel
-            dim3 block(16, 16);
+            dim3 block(KERNEL_BLK_DIM, KERNEL_BLK_DIM);
             dim3 grid((width + block.x - 1) / block.x,
                      (height + block.y - 1) / block.y);
 
