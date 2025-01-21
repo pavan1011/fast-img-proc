@@ -28,7 +28,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # CUDA option: compile with CUDA or no
 option(USE_CUDA "Enable CUDA support" OFF)
 option(BUILD_DOCUMENTATION "Build documentation with Doxygen" OFF)
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
 
 # If no build type is defined, use Release as default
 if(NOT CMAKE_BUILD_TYPE)

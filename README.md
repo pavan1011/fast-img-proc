@@ -6,7 +6,7 @@ The supported image processing operations are:
 
 - Grayscale Conversion
 - Histogram Equalization
-- Edge Detection
+- Edge Detection (GPU support)
 - Blur
 
 The supported image formats are:
@@ -16,9 +16,17 @@ The supported image formats are:
 
 ## Required Software Packages
 - **C++ (required)**: compiler that supports C++20
-- **CMake 3.18+ (required)** : ```sudo apt-get -y install cmake```
-- **Python 3.7+ (required)**  : ```sudo apt install python3.7-dev``` [[github link](https://github.com/python/cpython)]
-- **TBB (required)** : ```sudo apt-get install libtbb-dev``` [[github link](https://github.com/ibaned/tbb)]
+- **CMake 3.18+ (required)** : 
+    - Linux: ```sudo apt-get -y install cmake```
+    - macOS: ``brew install cmake``
+- **Python 3.7+ (required)**  : 
+    - Linux: ```sudo apt install python3-dev``` 
+    - macOS: ```brew install python```
+    - [[github link](https://github.com/python/cpython)]
+- **TBB (required)** : 
+    - Linux: ```sudo apt-get install libtbb-dev``` 
+    - macOS: ```brew install tbb```
+    - [[github link](https://github.com/ibaned/tbb)]
 - **nanobind (required)** : included as a git submodule in ```src/external/nanobind``` [[github link](https://github.com/wjakob/nanobind)]
 - **CUDA Toolkit & Driver** (optional):  [NVIDIA Installation guide](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=24.04&target_type=deb_local)
 
@@ -40,25 +48,26 @@ cmake -S ../ -B .
 cmake -DCMAKE_BUILD_TYPE=Release -S ../ -B .
 ```
 
-#### CMake Build Flags
 
-- ```-DCMAKE_BUILD_TYPE```: provides option to set the following types of builds: 
+### Creating Python Virtual Environment (optional)
 
-    - Debug: shows debug, info, warn, and, error logs
-    - Profile: profile logs only
-    - Verbose: info, warn, error logs
-    - Release: warn and error logs only
+**Linux**:
+```bash
+# Install python virtual env (if not installed)
+sudo apt install python3-virtualenv
 
-- ```-DUSE_CUDA```: optionally enables GPU acceleration for supported image processing algorithms
+# Create build directory
+mkdir build && cd build
 
-- ```-DBUILD_DOCUMENTATION```: optionally enables detailed documentation generation locally using Doxygen 
+# Create python virtual environment
+python -m venv /path/to/venv
+source /path/to/venv/bin/activate
 
+# virtual environment activated
 
-- ```-DCMAKE_CUDA_COMPILER```: path to CUDA compiler. Required if ```-DUSE_CUDA``` is set to ON. Usually at ```/usr/local/cuda-<version>/bin/nvcc```
-
-- ```-DCUDA_TOOLKIT_ROOT_DIR```: path to CUDA toolkit. Required if ```-DUSE_CUDA``` is set to ON. Usually at ```/usr/local/cuda-<version>```
-
-- ```-DPYTHON_EXECUTABLE``` provides a hint to the CMake build system to help it find a specific version of Python (for virtual environments and non-default python installations).
+# To deactivate python venv
+deactivate
+```
 
 
 ### Configure with CUDA support
@@ -67,6 +76,7 @@ Requires CUDA compiler installed
 ```bash
 cmake -S ../ -B . -DUSE_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc
 ```
+**NOTE**: The paths provided above ``/usr/local/cuda-12`` might be different on your machine. Update them with the paths specific to your CUDA configuration.
 
 ### Build ```fast-img-proc```
 ```bash
@@ -75,22 +85,46 @@ cmake --build .
 
 Following the above steps generates ```fast_image_processing.cpython-<python-version>-<arch>-<platform>.so``` in ```/path/to/fast-img-proc/build```
 
-#### Update PYTHONPATH
+### Update PYTHONPATH environment variable
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:/path/to/lib/directory
+export PYTHONPATH=$PYTHONPATH:/path/to/build/directory
 ```
+
+
+
+### List of all Build Flags
+
+- ```-DCMAKE_BUILD_TYPE```: provides option to set the following types of builds: 
+
+    - Debug: shows debug, info, warn, and, error logs
+    - Release: warn and error logs only
+
+- ```-DUSE_CUDA```: optionally enables GPU acceleration for supported image processing algorithms
+
+- ```-DBUILD_DOCUMENTATION```: optionally enables detailed documentation generation locally using Doxygen 
+
+- ```-DCMAKE_CUDA_COMPILER```: path to CUDA compiler. Required if ```-DUSE_CUDA``` is set to ON. Usually at ```/usr/local/cuda-<version>/bin/nvcc```
+
+- ```-DCUDA_TOOLKIT_ROOT_DIR```: path to CUDA toolkit. Required if ```-DUSE_CUDA``` is set to ON. Usually at ```/usr/local/cuda-<version>```
+
+- ```-DPYTHON_EXECUTABLE``` provides a hint to the CMake build system to help it find a specific version of Python (for virtual environments and non-default python installations).
 
 
 ## Usage in Python
 
-Detailed examples along with performance profiling shown in ```fast_img_proc/scripts```. 
+More examples along with performance profiling are available in ```fast_img_proc/scripts```.
 
 Below is the basic usage:
 
 ```python
 #  fast-img-proc exposed as fast_image_processing using nanobind
 import fast_image_processing as fip
+
+# If you didn't update the PYTHONPATH to point to the build directory
+# Do the following to link the generated .so to your python script
+import sys
+sys.path.append('/path/to/your/build/directory')
 
 def main():
     # Load an RGB image (PNG or JPG supported)
@@ -169,9 +203,32 @@ def main():
 ```
 ## Testing
 
+The default build runs with  disables building tests. However, if you want to enable them to run tests locally you can follow the below instructions.
+
+### Install gtest
+
+**Linux**:
 ```bash
-cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE=<path-to-python> -DUSE_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc -S ../ -B .
+sudo apt-get install libgtest-dev
 ```
+**macOS**:
+```bash
+brew install googletest
+```
+
+### Install ``pytest`` Python package
+
+```bash
+python3 -m pip install pytest
+```
+
+
+### Configure Build with Testing Enabled
+```
+cmake -DCMAKE_BUILD_TYPE=<build-type> -DBUILD_TESTS=ON -DPYTHON_EXECUTABLE=<path-to-python> -DUSE_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc -S ../ -B .
+```
+
+### Build Tests
 
 ```bash
 cmake --build . --target cpp_tests
@@ -182,7 +239,6 @@ ctest
 # Run with verbose output
 ctest -V
 
-ctest -R cpp_tests # Run only gtest tests
 ctest -R python # Run only Python tests
 ```
 
@@ -193,15 +249,20 @@ A detailed version of documentation of the source files, including class and mem
 
 ### Install Doxygen and graphviz
 
+**Linux** :
 ```bash
 sudo apt-get install doxygen graphviz
+```
+**macOS**:
+```bash
+brew install doxygen graphviz
 ```
 
 ### Configure build to generate docs
 
 ```bash
 cd fast-img-proc && mkdir build_docs && cd build_docs
-cmake -S ../ -B . -DBUILD_DOCUMENTATION=ON 
+cmake -S ../ -B . <your-build-flags> -DBUILD_DOCUMENTATION=ON
 ```
 
 ### Build Documentation
