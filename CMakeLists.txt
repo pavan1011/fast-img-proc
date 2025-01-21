@@ -9,20 +9,16 @@ configure_file(
     ${CMAKE_CURRENT_BINARY_DIR}/include/version.h
     @ONLY
 )
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 # Enable -fPIC flag for CMake
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # CUDA option: compile with CUDA or no
 option(USE_CUDA "Enable CUDA support" OFF)
-
-# Documentation option: configure build to generate docs or no (default = OFF)
 option(BUILD_DOCUMENTATION "Build documentation with Doxygen" OFF)
-
-# Testing option: configure build to generate tests or no (default = ON)
 option(BUILD_TESTS "Build tests" ON)
 
 # If no build type is defined, use Release as default
@@ -43,7 +39,6 @@ endif()
 set(CMAKE_CONFIGURATION_TYPES "Debug;Verbose;Profile;Release" 
     CACHE STRING "Available build types" FORCE)
 
-
 add_library(project_options INTERFACE)
 
 # Adding various Build options
@@ -59,12 +54,12 @@ target_compile_definitions(project_options INTERFACE
 if(MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi /DDEBUG_BUILD")
     set(CMAKE_CXX_FLAGS_VERBOSE "/O2 /DVERBOSE_BUILD")
-    set(CMAKE_CXX_FLAGS_PROFILE "/O2 /DPROFILE_BUILD")
+    set(CMAKE_CXX_FLAGS_PROFILE "/O3 /DPROFILE_BUILD")
     set(CMAKE_CXX_FLAGS_RELEASE "/O2")
 else()
     set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -DDEBUG_BUILD")
     set(CMAKE_CXX_FLAGS_VERBOSE "-O2 -DVERBOSE_BUILD")
-    set(CMAKE_CXX_FLAGS_PROFILE "-O2 -DPROFILE_BUILD")
+    set(CMAKE_CXX_FLAGS_PROFILE "-O3 -DPROFILE_BUILD")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif()
 
@@ -89,19 +84,46 @@ target_link_libraries(fast_image_processing PRIVATE image_lib)
 
 # Test configuration
 if(BUILD_TESTS)
-    # Enable testing
+    # Check if in virtual environment
+    if(DEFINED ENV{VIRTUAL_ENV} OR DEFINED ENV{CONDA_PREFIX})
+        set(_pip_args)
+    else()
+        set(_pip_args "--user")
+    endif()
+
+    # Check if pytest is already installed
+    execute_process(
+        COMMAND "${Python_EXECUTABLE}" -c "import pytest"
+        RESULT_VARIABLE PYTEST_NOT_FOUND
+        OUTPUT_QUIET
+        ERROR_QUIET
+    )
+
+    if(PYTEST_NOT_FOUND)
+        message(STATUS "Installing pytest for Python executable: ${Python_EXECUTABLE}")
+        execute_process(
+            COMMAND "${Python_EXECUTABLE}" -m pip install ${_pip_args} pytest
+            RESULT_VARIABLE PIP_RESULT
+            OUTPUT_VARIABLE PIP_OUTPUT
+            ERROR_VARIABLE PIP_ERROR
+        )
+
+        if(NOT PIP_RESULT EQUAL 0)
+            message(WARNING "Failed to install pytest: ${PIP_ERROR}")
+        else()
+            message(STATUS "Successfully installed pytest")
+        endif()
+    else()
+        message(STATUS "pytest already installed for Python executable: ${Python_EXECUTABLE}")
+    endif()
+
+    #Call CTest enable_testing
     enable_testing()
-    
-    # Find GTest
     find_package(GTest REQUIRED)
     include(GoogleTest)
-    
-    # Add tests directory
     add_subdirectory(tests)
 
 endif()
-
-
 
 # Documentation configuration
 if(BUILD_DOCUMENTATION)

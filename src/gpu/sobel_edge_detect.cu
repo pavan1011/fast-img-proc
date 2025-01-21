@@ -168,6 +168,10 @@ namespace {
     }
 }
 
+/**
+ * @namespace gpu
+ * @brief GPU-accelerated image processing operations
+ */
 namespace gpu {
     bool is_available() {
         int deviceCount = 0;
