@@ -207,7 +207,7 @@ def main():
 ```
 ## Testing
 
-The default build runs with  disables building tests. However, if you want to enable them to run tests locally you can follow the below instructions.
+The default build disables building tests. However, if you want to enable them to run tests locally you can follow the below instructions.
 
 ### Install gtest
 
@@ -298,8 +298,7 @@ python3 ./scripts/benchmark_edge_detect.py <path/to/input_images> benchmark_resu
 
 This runs sobel edge detection and stores resulting images in ``benchmark_results`` and ``benchmark_results.csv`` in the current directory.
 
-Initial results suggests 3-5x improvement in runtimes when comparing CPU and GPU performance.
-
+Results suggest 3-5X improvement in runtimes when comparing GPU runtimes with CPU on images upto 30MB. The speedup is 8-12X for very large images (30+ MB) 
 
 ### Benchmark Summary
 
@@ -309,7 +308,7 @@ After benchmarking on images of different dimensions (w x h).
 
 | kernel_size | Speedup factor |
 |-------------|----------------|
-|3            | 2.618503       |
+|3            | 2.874725       |
 |5            | 5.568702       |
 |7            | 6.822060       |
 
