@@ -3,6 +3,10 @@
 
 #include "image/image.h"
 
+/**
+ * @namespace gpu
+ * @brief GPU-accelerated image processing operations
+ */
 namespace gpu {
     /**
      * 

@@ -25,6 +25,16 @@ public:
      * @throws std::runtime_error If file cannot be loaded
      */
     Image(const std::string& filepath);
+
+    /**
+     * @brief Constructs an empty image with each pixel initialized to 0
+     *        from the following dimensional parameters:
+     * @param width: length of row (in pixels) 
+     * @param height: Length of column (in pixels)
+     * @param channels: No. of color channels to represent 
+     *                  the image (1=Grayscale, 3=RGB)
+     * @throws std::invalid_argument If image doesn't c
+     */
     Image(uint32_t width, uint32_t height, uint8_t channels);
     ~Image();
 
