@@ -39,9 +39,14 @@ def benchmark_edge_detection(image_list, kernel_sizes, output_dir):
             })
 
             print(f"took CPU: {round(cpu_time, 6)} s, GPU: {round(gpu_time, 6)} s")
+            
+            out_img_file, out_img_ext= os.path.splitext(os.path.basename(img_file))
 
-            cpu_result.save(f"{output_dir}/cpu_output_{img_file}")
-            gpu_result.save(f"{output_dir}/gpu_output_{img_file}")
+            print(f"Saving {output_dir}/cpu_output_{out_img_file}_{kernel_size}{out_img_ext}")
+            cpu_result.save(f"{output_dir}/cpu_output_{out_img_file}_{kernel_size}{out_img_ext}")
+
+            print(f"Saving {output_dir}/cpu_output_{out_img_file}_{kernel_size}{out_img_ext}")
+            gpu_result.save(f"{output_dir}/gpu_output_{out_img_file}_{kernel_size}{out_img_ext}")
     
     return pd.DataFrame(results)
 
@@ -87,10 +92,16 @@ def main():
     if len(sys.argv) == 3:
         test_image_path = sys.argv[1]
         output_dir = os.path.abspath(sys.argv[2])
-        image_list = [f for f in listdir(test_image_path) \
-                       if (isfile(join(test_image_path, f)) and \
-                           (f.endswith('.png') or f.endswith('.jpg')))]
+        print(f"Reading images from {test_image_path}")  
+        image_list = []
+        for f in listdir(test_image_path):
+            if(isfile(join(test_image_path, f)) and \
+               (f.endswith('.png') or f.endswith('.jpg'))):
+                print(f"Found: {f}")
+                image_list.append(join(test_image_path, f))
+        
         kernel_sizes = [3, 5, 7]
+        print(image_list)
         
         # Run benchmarks
         results = benchmark_edge_detection(image_list, kernel_sizes, output_dir)
