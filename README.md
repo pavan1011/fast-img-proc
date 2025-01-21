@@ -175,6 +175,15 @@ cmake -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE=<path-to-python> -DUSE_CUDA=O
 
 ```bash
 cmake --build . --target cpp_tests
+
+# Run all tests
+ctest
+
+# Run with verbose output
+ctest -V
+
+ctest -R cpp_tests # Run only gtest tests
+ctest -R python # Run only Python tests
 ```
 
 
@@ -201,6 +210,14 @@ cmake --build . --target docs
 ```
 
 This will generate detailed documentation which can be viewed by opening ```fast-img-proc/build_docs/docs/html/html.index```.
+
+### Build ALL
+
+```bash
+cmake -DCMAKE_BUILD_TYPE=<build-type> -DUSE_CUDA=ON -DPYTHON_EXECUTABLE=<path-to-python> -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc  -DBUILD_DOCUMENTATION=ON -S ../ -B .
+
+cmake --build .
+```
 
 ## Credits
 
