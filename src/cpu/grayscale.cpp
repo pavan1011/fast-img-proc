@@ -28,8 +28,8 @@ namespace cpu {
             return output;
 
         }else if(input.channels() != 3) {
-            LOG(ERROR, "Input image must have at least 3 channels");
-            throw std::runtime_error("Image must have at least 3 channels");
+            LOG(ERROR, "Input image must have 1 or 3 channels");
+            throw std::runtime_error("Input image must have 1 or 3 channels");
         }
         
         // Convert pixels in parallel. STL makes calls to TBB library
