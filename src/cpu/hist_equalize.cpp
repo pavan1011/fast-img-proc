@@ -5,6 +5,7 @@
 #include <execution>
 #include <cmath>
 #include <iostream>
+#include <numeric>
 
 namespace cpu {
     Image rgb_to_ycrcb(const Image& input) {

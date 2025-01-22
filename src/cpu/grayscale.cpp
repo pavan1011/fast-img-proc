@@ -3,6 +3,7 @@
 #include <execution>
 #include <iostream>
 #include <vector>
+#include <numeric>
 
 namespace cpu {
 

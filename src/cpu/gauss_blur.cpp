@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
+#include <numeric>
 namespace {
     constexpr uint32_t MIN_KERNEL_SIZE = 3;
     constexpr uint32_t MAX_KERNEL_SIZE = UINT32_MAX >> 2;
