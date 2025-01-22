@@ -10,23 +10,31 @@
 #include <numeric>
 
 namespace {
+    // Normalization factor = SUM of smoothing kernel values.
+    constexpr uint8_t NORM_FACTOR_3 = 4;
+    constexpr uint8_t NORM_FACTOR_5 = 16;
+    constexpr uint8_t NORM_FACTOR_7 = 64;
+
     // Preset Sobel kernels
-    // Derivative kernels (dx=1 or dy=1) for calculating gradient
+    // Standard Sobel derivative kernels (dx=1 or dy=1) for calculating gradient
     constexpr std::array<float, 3> sobel_3 = {-1, 0, 1};
     constexpr std::array<float, 5> sobel_5 = {-1, -2, 0, 2, 1};
     constexpr std::array<float, 7> sobel_7 = {-1, -4, -5, 0, 5, 4, 1};
 
     // Smoothing kernels (dx=0 or dy=0) for reducing noise
-     // Normalized by sum = 4
-    constexpr std::array<float, 3> smooth_3 = {1.f/4, 2.f/4, 1.f/4};
-
-    // Normalized by sum = 16
-    constexpr std::array<float, 5> smooth_5 = {1.f/16, 4.f/16, 6.f/16, 4.f/16, 
-                                               1.f/16}; 
-
-    // Normalized by sum = 50
-    constexpr std::array<float, 7> smooth_7 = {1.f/50, 6.f/50, 15.f/50, 
-                                               20.f/50, 15.f/50, 6.f/50, 1.f/50}; 
+    constexpr std::array<float, 3> smooth_3 = {1.f, 2.f, 1.f};
+    constexpr std::array<float, 5> smooth_5 = {1.f, 4.f, 6.f, 4.f, 1.f}; 
+    constexpr std::array<float, 7> smooth_7 = {1.f, 6.f, 15.f, 20.f, 15.f, 6.f, 1.f};
+    
+    // Get normalization factor based on kernel size
+    float get_norm_factor(int kernel_size) {
+        switch(kernel_size) {
+            case 3: return NORM_FACTOR_3;
+            case 5: return NORM_FACTOR_5;
+            case 7: return NORM_FACTOR_7;
+            default: return 1.0f;
+        }
+    }
 
     // Get kernel based on order of derivative and kernel size
     const float* get_kernel(int derivative_order, int kernel_size) {
@@ -37,7 +45,7 @@ namespace {
                 case 7: return smooth_7.data();
                 default: return nullptr;
             }
-        } else {  // derivative_order == 1
+        } else {  // derivative_order == 1 is supported
             switch(kernel_size) {
                 case 3: return sobel_3.data();
                 case 5: return sobel_5.data();
@@ -59,21 +67,27 @@ namespace {
 
     // Sobel operator implemented using separable convolution
     void apply_sobel(const unsigned char* input, unsigned char* output,
-                    int width, int height,
-                    int dx, int dy, int kernel_size) {
+                    int width, int height, int dx, int dy, int kernel_size) {
+        // Get appropriate kernels based on size
         const float* kernel_deriv = get_kernel(1, kernel_size); // Derivative kernel
         const float* kernel_smooth = get_kernel(0, kernel_size);  // Smoothing kernel
+        
         // Add kernel pointer validation
         if (!kernel_deriv || !kernel_smooth) {
             LOG(ERROR, "Failed to generate kernels. Possible invalid config");
             throw std::runtime_error(
                 "Failed to generate kernels. Possible invalid config");
         }
-        const int radius = kernel_size / 2;
-
+        
         print_kernel(kernel_deriv, kernel_size, "Derivative kernel");
         print_kernel(kernel_smooth, kernel_size, "Smoothing kernel");
+        
+        // radius = kernel_size/2
+        const int radius = kernel_size >> 1;
+        // Get normalization factor based on kernel size
+        const float norm_factor = get_norm_factor(kernel_size);
 
+        //Create indices to acces each pixel
         std::vector<int> indices(width * height);
         std::iota(indices.begin(), indices.end(), 0);
 
@@ -90,26 +104,32 @@ namespace {
                 float sum_x = 0.0f;
                 float sum_y = 0.0f;
 
+                // input[y * width + px] is a pixel
                 for(int k = -radius; k <= radius; ++k) {
-                    //X direction: input[y * width + px] is a pixel
-                    const int px = std::clamp(x + k, 0, width - 1);
-                    // For X gradient:
-                    if (dx) {
-                        // apply derivative kernel in X-direction if dx=1,
+                    const int px = std::clamp(x + k, 0, width - 1); // X-direction
+                    // Handle X-direction processing
+                    if(dx) {
+                        // When dx=1: Apply derivative in X-direction in horizontal pass
+                        // This is the first part of Sobel X-gradient calculation
                         sum_x += input[y * width + px] * kernel_deriv[k + radius];
                     } else {
-                        // apply smoothing kernel in X-direction if dx=0
+                        // When dx=0: Apply smoothing in X-direction
+                        // This smoothing is needed for Y-gradient calculation
                         sum_x += input[y * width + px] * kernel_smooth[k + radius];
                     }
-                    // For Y gradient: always apply smoothing in Y-direction
+
+                    // Handle Y-direction processing
+                    // For Y-direction, apply horizontal smoothing in the first pass
+                    // This is the first step of the separable convolution for Y-gradient
                     sum_y += input[y * width + px] * kernel_smooth[k + radius];
+
                 }
                 temp[idx] = std::make_pair(sum_x, sum_y);
             });
 
         // Apply vertical convolution (Y-direction) and compute gradients
         std::for_each(std::execution::par_unseq, indices.begin(), indices.end(),
-            [&temp, output, width, height, kernel_deriv, kernel_smooth, radius, dx, dy]
+            [&temp, output, width, height, kernel_deriv, kernel_smooth, radius, dx, dy, norm_factor]
             (int idx) {
                 const int x = idx % width;
                 const int y = idx / width;
@@ -118,30 +138,37 @@ namespace {
 
                 for(int k = -radius; k <= radius; ++k) {
                     const int py = std::clamp(y + k, 0, height - 1); // Y-direction
-                    // For X gradient:
-                    // always apply smoothing in Y-direction 
-                    grad_x += temp[py * width + x].first * kernel_smooth[k + radius];
-
-                    // For Y gradient:
-                    if (dy) {
-                        // apply derivative kernel in Y-direction if dy=1,
-                        grad_y += temp[py * width + x].second * kernel_deriv[k + radius];
-                    } else {
-                        // apply smoothing kernel if dy=0
-                        grad_y += temp[py * width + x].second * kernel_smooth[k + radius];
+                    // Complete X-gradient calculation
+                    if(dx){
+                        // When dx=1: Apply smoothing in Y-direction
+                        // This completes the Sobel X-gradient calculation:
+                        // (derivative in X) * (smoothing in Y)
+                        // When dx=0: Do nothing since we already applied 
+                        // smoothing in horizontal pass
+                        grad_x += temp[py * width + x].first * kernel_smooth[k + radius];
                     }
+                    // Complete Y-gradient calculation
+                    if(dy) {
+                        // When dy=1: Apply derivative in Y-direction
+                        // This completes the Sobel Y-gradient calculation:
+                        // (accumulated raw values) * (derivative in Y)
+                        grad_y += temp[py * width + x].second * kernel_deriv[k + radius];
+                    } 
                     
                 }
 
                 // Compute final gradient magnitude
                 float magnitude;
                 if (dx && dy) {
-                    magnitude = std::sqrt(grad_x * grad_x + grad_y * grad_y);
+                    magnitude = std::sqrt((grad_x * grad_x) + (grad_y * grad_y));
                 } else if (dx) {
                     magnitude = std::abs(grad_x);
                 } else {
                     magnitude = std::abs(grad_y);
                 }
+
+                // Apply normalization of gradients
+                magnitude /= norm_factor;
 
                 output[idx] = static_cast<unsigned char>(
                     std::clamp(magnitude, 0.0f, 255.0f));
