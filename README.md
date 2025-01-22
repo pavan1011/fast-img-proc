@@ -15,7 +15,7 @@ The supported image formats are:
 
 Supported platforms are:
 - Linux
-- macOS
+- macOS (coming soon!)
 
 
 ## Required Software Packages
