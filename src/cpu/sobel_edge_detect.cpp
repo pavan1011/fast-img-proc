@@ -151,7 +151,7 @@ namespace {
                     if(dy) {
                         // When dy=1: Apply derivative in Y-direction
                         // This completes the Sobel Y-gradient calculation:
-                        // (accumulated raw values) * (derivative in Y)
+                        // (accumulated pixel values from horiz conv) * (derivative in Y)
                         grad_y += temp[py * width + x].second * kernel_deriv[k + radius];
                     } 
                     

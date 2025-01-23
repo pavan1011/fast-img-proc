@@ -20,8 +20,9 @@
 } while(0)
 
 namespace {
-    // CUDA-related constants
+
     // Preset CUDA Kernel block size (16 x 16)
+    // Chosen after benchmarking with BLK_DIM =8(min), 16,and 32(max)
     constexpr uint32_t KERNEL_BLK_DIM = 16;
 
     // Separate constant memory arrays for each kernel size
@@ -107,7 +108,8 @@ namespace {
     }
 
     // Sobel kernels implemented using CUDA Texture and separable convolution
-    // This kernel performs the horizontal pass
+    // sobel_horizontal() performs the horizontal convolution: applies smoothing 
+    // or derivative kernel depending on dx and dy
     __global__ void sobel_horizontal(cudaTextureObject_t tex_input,
                                    float* temp_sum_x, float* temp_sum_y,
                                    int width, int height, int kernel_size,
@@ -126,13 +128,19 @@ namespace {
         for(int k = -radius; k <= radius; ++k) {
             int px = min(width-1, max(x + k, 0));
             float pixel = tex2D<unsigned char>(tex_input, px, y);
+            // Handle X-direction processing
             if (dx) {
-                // For x derivative, use derivative kernel in x direction
+                // When dx=1: Apply derivative in X-direction in horizontal pass
+                // This is the first part of Sobel X-gradient calculation
                 sum_x += pixel * kernel_deriv[k + radius];
             } else {
+                // When dx=0: Apply smoothing in X-direction
+                // This smoothing is needed for Y-gradient calculation
                 sum_x += pixel * kernel_deriv[k + radius];
             }
-            // For y derivative, use smoothing kernel in x direction
+            // Handle Y-direction processing
+            // For Y-direction, apply horizontal smoothing in the first pass
+            // This is the first step of the separable convolution for Y-gradient
             sum_y += pixel * kernel_smooth[k + radius];
         }
         
@@ -141,8 +149,7 @@ namespace {
 
     }
 
-    // Sobel kernels implemented using CUDA Texture and separable convolution
-    // This kernel performs the horizontal pass
+    // sobel_vertical() performs the vertical convolution and computes gradients
     __global__ void sobel_vertical(float* temp_sum_x, float* temp_sum_y,
                                  unsigned char* output, int width, int height,
                                  int kernel_size, int dx, int dy) {
@@ -161,17 +168,26 @@ namespace {
         for(int k = -radius; k <= radius; ++k) {
             int py = min(height-1, max(y + k, 0));
             if(py >= 0 && py < height) {
+                // Complete X-gradient calculation
                 if (dx) {
-                    // Complete X gradient using smoothing in y direction
+                    // When dx=1: Apply smoothing in Y-direction
+                    // This completes the Sobel X-gradient calculation:
+                    // (derivative in X) * (smoothing in Y)
+                    // When dx=0: Do nothing since we already applied 
+                    // smoothing in horizontal pass
                     grad_x += temp_sum_x[py * width + x] * kernel_smooth[k + radius];
                 }
+                // Complete Y-gradient calculation
                 if (dy) {
-                    // Complete Y gradient using derivative in y direction
+                    // When dy=1: Apply derivative in Y-direction
+                    // This completes the Sobel Y-gradient calculation:
+                    // (accumulated pixel values from horiz conv) * (derivative in Y)
                     grad_y += temp_sum_y[py * width + x] * kernel_deriv[k + radius];
                 }
             }
         }
 
+        // Compute final gradient magnitude
         float magnitude;
         if(dx && dy) {
             magnitude = sqrtf((grad_x * grad_x) + (grad_y * grad_y));
@@ -181,6 +197,7 @@ namespace {
             magnitude = fabsf(grad_y);
         }
 
+        // Apply normalization of gradients
         magnitude /= norm_factor;
 
         output[y * width + x] = static_cast<unsigned char>(
@@ -306,11 +323,10 @@ namespace gpu {
         unsigned char* d_output = nullptr;
 
         try {
-            // Create and copy to CUDA array
+            // Create and copy to CUDA array for input data
             cudaChannelFormatDesc channelDesc = 
                 cudaCreateChannelDesc<unsigned char>();
             CUDA_CHECK(cudaMallocArray(&d_array, &channelDesc, width, height));
-            
             CUDA_CHECK(cudaMemcpy2DToArray(d_array, 
                                          0, 0,
                                          source_data,
@@ -322,6 +338,7 @@ namespace gpu {
             // Specify texture object parameters
             cudaResourceDesc resDesc = {};
             resDesc.resType = cudaResourceTypeArray;
+            // Point texture object to input data
             resDesc.res.array.array = d_array;
 
             cudaTextureDesc texDesc = {};
@@ -342,6 +359,7 @@ namespace gpu {
             // Allocate output buffer
             CUDA_CHECK(cudaMalloc(&d_output, width * height * sizeof(unsigned char)));
 
+            // LOG(ERROR, "KERNEL_BLK_DIM: {}", KERNEL_BLK_DIM);
             // Launch kernel
             dim3 block(KERNEL_BLK_DIM, KERNEL_BLK_DIM);
             dim3 grid((width + block.x - 1) / block.x,
