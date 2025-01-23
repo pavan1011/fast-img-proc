@@ -21,7 +21,7 @@ namespace gpu {
      * @param dy: order of derivative in Y direction (0 or 1 supported).
      *            performs edge detection on Y-Axis if set to 1, else performs smoothing
      * @param kernel size: An integer that specifies a square kernel (must be odd and >= 1 and <= 7)
-     *                     Default size is 3x3
+     *                     Default size is 3x3. If @p kernel_size = 1 is passed, we use default size 3x3
      * @return Resultant mask image after applying Sobel filters.
     *  @throws std::invalid_argument if invalid kernel size is passed (supported = 1, 3, 5, and 7)
      */

@@ -19,21 +19,10 @@
     } \
 } while(0)
 
-constexpr uint32_t KERNEL_BLK_DIM = 16;
-
 namespace {
-    // Preset Sobel kernels
-    // Derivative kernels (dx=1 or dy=1) for calculating gradient
-    constexpr std::array<float, 3> sobel_3 = {-1, 0, 1};
-    constexpr std::array<float, 5> sobel_5 = {-1, -2, 0, 2, 1};
-    constexpr std::array<float, 7> sobel_7 = {-1, -4, -5, 0, 5, 4, 1};
-
-    // Smoothing kernels (dx=0 or dy=0) for reducing noise
-    constexpr std::array<float, 3> smooth_3 = {1.f/4, 2.f/4, 1.f/4};
-    constexpr std::array<float, 5> smooth_5 = {1.f/16, 4.f/16, 6.f/16, 4.f/16, 1.f/16};
-    constexpr std::array<float, 7> smooth_7 = {1.f/50, 6.f/50, 15.f/50, 20.f/50, 
-                                              15.f/50, 6.f/50, 1.f/50};
-
+    // CUDA-related constants
+    // Preset CUDA Kernel block size (16 x 16)
+    constexpr uint32_t KERNEL_BLK_DIM = 16;
     // Separate constant memory arrays for each kernel size
     __constant__ float d_kernel_deriv_3[3];
     __constant__ float d_kernel_deriv_5[5];
@@ -41,6 +30,22 @@ namespace {
     __constant__ float d_kernel_smooth_3[3];
     __constant__ float d_kernel_smooth_5[5];
     __constant__ float d_kernel_smooth_7[7];
+
+    // Normalization factor = SUM of smoothing kernel values.
+    constexpr uint8_t NORM_FACTOR_3 = 4;
+    constexpr uint8_t NORM_FACTOR_5 = 16;
+    constexpr uint8_t NORM_FACTOR_7 = 64;
+
+    // Preset Sobel kernels
+    // Standard Sobel derivative kernels (dx=1 or dy=1) for calculating gradient
+    constexpr std::array<float, 3> sobel_3 = {-1, 0, 1};
+    constexpr std::array<float, 5> sobel_5 = {-1, -2, 0, 2, 1};
+    constexpr std::array<float, 7> sobel_7 = {-1, -4, -5, 0, 5, 4, 1};
+
+    // Smoothing kernels (dx=0 or dy=0) for reducing noise
+    constexpr std::array<float, 3> smooth_3 = {1.f, 2.f, 1.f};
+    constexpr std::array<float, 5> smooth_5 = {1.f, 4.f, 6.f, 4.f, 1.f};
+    constexpr std::array<float, 7> smooth_7 = {1.f, 6.f, 15.f, 20.f, 15.f, 6.f, 1.f};
 
     // Get kernel based on order of derivative and kernel size
     const float* get_kernel(int derivative_order, int kernel_size) {
@@ -51,7 +56,7 @@ namespace {
                 case 7: return smooth_7.data();
                 default: return nullptr;
             }
-        } else {
+        } else { // derivative order == 1 is supported
             switch(kernel_size) {
                 case 3: return sobel_3.data();
                 case 5: return sobel_5.data();
@@ -61,97 +66,126 @@ namespace {
         }
     }
 
+    // Get normalization factor based on kernel size
+    __device__ float get_norm_factor(int kernel_size) {
+        switch(kernel_size) {
+            case 3: return NORM_FACTOR_3;
+            case 5: return NORM_FACTOR_5;
+            case 7: return NORM_FACTOR_7;
+            default: return 1.0f;
+        }
+    }
+
     // Helper function to get appropriate device kernel pointer
-    __device__ const float* get_device_kernel(bool is_derivative, int kernel_size) {
-        if (is_derivative) {
-            switch(kernel_size) {
-                case 3: return d_kernel_deriv_3;
-                case 5: return d_kernel_deriv_5;
-                case 7: return d_kernel_deriv_7;
-                default: return nullptr;
-            }
-        } else {
+    __device__ const float* get_device_kernel(int derivative_order, int kernel_size) {
+        if (derivative_order == 0) {
             switch(kernel_size) {
                 case 3: return d_kernel_smooth_3;
                 case 5: return d_kernel_smooth_5;
                 case 7: return d_kernel_smooth_7;
                 default: return nullptr;
             }
+        } else {
+            switch(kernel_size) {
+                case 3: return d_kernel_deriv_3;
+                case 5: return d_kernel_deriv_5;
+                case 7: return d_kernel_deriv_7;
+                default: return nullptr;
+            }
         }
     }
 
-    __global__ void sobel_kernel(cudaTextureObject_t tex_input,
-                                unsigned char* output, int width, int height,
-                                int dx, int dy, int kernel_size) {
+    // Helper function to print chosen kernel
+    void print_kernel(const float* kernel, int size, const char* name) {
+        LOG_NNL(DEBUG, "{}  (size {}): \n [",  name, size);
+        for (int i = 0; i < size; ++i) {
+            LOG_NNL(DEBUG, "{}",  kernel[i]);
+            if (i < size-1) LOG_NNL(DEBUG, ", ");
+        }
+        LOG_NNL(DEBUG, "]\n");
+    }
+
+    // Sobel kernel implemented using CUDA Texture and separable convolution
+    __global__ void sobel_horizontal(cudaTextureObject_t tex_input,
+                                   float* temp_sum_x, float* temp_sum_y,
+                                   int width, int height, int kernel_size,
+                                   int dx, int dy) {
         const int x = blockIdx.x * blockDim.x + threadIdx.x;
         const int y = blockIdx.y * blockDim.y + threadIdx.y;
         if (x >= width || y >= height) return;
 
-        const int radius = kernel_size / 2;
-        const float* kernel_dx = get_device_kernel(true, kernel_size);
-        const float* kernel_smooth = get_device_kernel(false, kernel_size);
-        
+        const float* kernel_deriv = get_device_kernel(1, kernel_size);
+        const float* kernel_smooth = get_device_kernel(0, kernel_size);
+        const int radius = kernel_size >> 1;
+
         float sum_x = 0.0f;
         float sum_y = 0.0f;
 
-        // Horizontal pass
         for(int k = -radius; k <= radius; ++k) {
-            float pixel = tex2D<unsigned char>(tex_input, x + k, y);
-            if(dx) {
-                sum_x += pixel * kernel_dx[k + radius];
+            int px = min(width-1, max(x + k, 0));
+            float pixel = tex2D<unsigned char>(tex_input, px, y);
+            if (dx) {
+                // For x derivative, use derivative kernel in x direction
+                sum_x += pixel * kernel_deriv[k + radius];
             } else {
-                sum_x += pixel * kernel_smooth[k + radius];
+                sum_x += pixel * kernel_deriv[k + radius];
             }
+            // For y derivative, use smoothing kernel in x direction
             sum_y += pixel * kernel_smooth[k + radius];
         }
+        
+        temp_sum_x[y * width + x] = sum_x;
+        temp_sum_y[y * width + x] = sum_y;
 
+    }
+
+    __global__ void sobel_vertical(float* temp_sum_x, float* temp_sum_y,
+                                 unsigned char* output, int width, int height,
+                                 int kernel_size, int dx, int dy) {
+        const int x = blockIdx.x * blockDim.x + threadIdx.x;
+        const int y = blockIdx.y * blockDim.y + threadIdx.y;
+        if (x >= width || y >= height) return;
+
+        const int radius = kernel_size >> 1;
+        const float norm_factor = get_norm_factor(kernel_size);
+        const float* kernel_smooth = get_device_kernel(0, kernel_size);
+        const float* kernel_deriv = get_device_kernel(1, kernel_size);
+        
         float grad_x = 0.0f;
         float grad_y = 0.0f;
 
-        // Vertical pass
         for(int k = -radius; k <= radius; ++k) {
-            float temp_x = tex2D<unsigned char>(tex_input, x, y + k);
-            grad_x += sum_x * kernel_smooth[k + radius];
-
-            if(dy) {
-                grad_y += sum_y * kernel_dx[k + radius];
-            } else {
-                grad_y += sum_y * kernel_smooth[k + radius];
+            int py = min(height-1, max(y + k, 0));
+            if(py >= 0 && py < height) {
+                if (dx) {
+                    // Complete X gradient using smoothing in y direction
+                    grad_x += temp_sum_x[py * width + x] * kernel_smooth[k + radius];
+                }
+                if (dy) {
+                    // Complete Y gradient using derivative in y direction
+                    grad_y += temp_sum_y[py * width + x] * kernel_deriv[k + radius];
+                }
             }
         }
 
-        // Compute magnitude
         float magnitude;
         if(dx && dy) {
-            magnitude = sqrtf(grad_x * grad_x + grad_y * grad_y);
+            magnitude = sqrtf((grad_x * grad_x) + (grad_y * grad_y));
         } else if(dx) {
             magnitude = fabsf(grad_x);
         } else {
             magnitude = fabsf(grad_y);
         }
 
+        magnitude /= norm_factor;
+
         output[y * width + x] = static_cast<unsigned char>(
             min(255.0f, max(0.0f, magnitude)));
     }
 
     // Helper function to copy appropriate kernel to constant memory
-    void copy_kernel_to_device(const float* kernel, int kernel_size, bool is_derivative) {
-        if (is_derivative) {
-            switch(kernel_size) {
-                case 3:
-                    CUDA_CHECK(cudaMemcpyToSymbol(d_kernel_deriv_3, kernel, 
-                                                3 * sizeof(float)));
-                    break;
-                case 5:
-                    CUDA_CHECK(cudaMemcpyToSymbol(d_kernel_deriv_5, kernel, 
-                                                5 * sizeof(float)));
-                    break;
-                case 7:
-                    CUDA_CHECK(cudaMemcpyToSymbol(d_kernel_deriv_7, kernel, 
-                                                7 * sizeof(float)));
-                    break;
-            }
-        } else {
+    void copy_kernel_to_device(const float* kernel, int kernel_size, int derivative_order) {
+        if (derivative_order == 0) {
             switch(kernel_size) {
                 case 3:
                     CUDA_CHECK(cudaMemcpyToSymbol(d_kernel_smooth_3, kernel, 
@@ -166,6 +200,21 @@ namespace {
                                                 7 * sizeof(float)));
                     break;
             }
+        } else { // Currently, only derivative_order upto 1 supported
+            switch(kernel_size) {
+                case 3:
+                    CUDA_CHECK(cudaMemcpyToSymbol(d_kernel_deriv_3, kernel, 
+                                                3 * sizeof(float)));
+                    break;
+                case 5:
+                    CUDA_CHECK(cudaMemcpyToSymbol(d_kernel_deriv_5, kernel, 
+                                                5 * sizeof(float)));
+                    break;
+                case 7:
+                    CUDA_CHECK(cudaMemcpyToSymbol(d_kernel_deriv_7, kernel, 
+                                                7 * sizeof(float)));
+                    break;
+            }
         }
     }
 }
@@ -175,6 +224,8 @@ namespace {
  * @brief GPU-accelerated image processing operations
  */
 namespace gpu {
+    // Helper function to check if CUDA device is available.
+    // Expose to processing.cpp via gpu namespace
     bool is_available() {
         int deviceCount = 0;
         cudaGetDeviceCount(&deviceCount);
@@ -201,6 +252,8 @@ namespace gpu {
             throw std::invalid_argument("Kernel size must be 1, 3, 5, or 7");
         }
 
+        // Special case for kernel_size = 1,
+        // OpenCV implements separable conv of 1x3 X 3x1 in this case.
         if (kernel_size == 1) kernel_size = 3;
 
         const auto width = input.width();
@@ -213,7 +266,8 @@ namespace gpu {
 
         // Handle grayscale conversion
         const unsigned char* source_data;
-        Image gray_image(width, height, 1);  // Will only be used if needed
+        // Will only be used if grayscale conversion is needed
+        Image gray_image(width, height, 1);  
 
         if (input.channels() == 1) {
             source_data = input.data();
@@ -223,16 +277,28 @@ namespace gpu {
         }
 
         // Get kernels
-        const float* kernel_dx = get_kernel(1, kernel_size);
+        const float* kernel_deriv = get_kernel(1, kernel_size);
         const float* kernel_smooth = get_kernel(0, kernel_size);
 
+        print_kernel(kernel_deriv, kernel_size, "Derivative kernel");
+        print_kernel(kernel_smooth, kernel_size, "Smoothing kernel");
+
+        // Add kernel pointer validation
+        if (!kernel_deriv || !kernel_smooth) {
+            LOG(ERROR, "Failed to generate kernels. Possible invalid config");
+            throw std::runtime_error(
+                "Failed to generate kernels. Possible invalid config");
+        }
+
         // Copy kernels to appropriate constant memory arrays
-        copy_kernel_to_device(kernel_dx, kernel_size, true);
-        copy_kernel_to_device(kernel_smooth, kernel_size, false);
+        copy_kernel_to_device(kernel_deriv, kernel_size, 1);
+        copy_kernel_to_device(kernel_smooth, kernel_size, 0);
 
         // Initialize device resources
         cudaTextureObject_t tex_input = 0;
         cudaArray* d_array = nullptr;
+        float* d_temp_sum_x = nullptr;
+        float* d_temp_sum_y = nullptr;
         unsigned char* d_output = nullptr;
 
         try {
@@ -264,6 +330,11 @@ namespace gpu {
             // Create texture object
             CUDA_CHECK(cudaCreateTextureObject(&tex_input, &resDesc, &texDesc, nullptr));
 
+            // Allocate temporary buffer to store intermediate horizontal pass outputs
+            CUDA_CHECK(cudaMalloc(&d_temp_sum_x, width * height * sizeof(float)));
+            CUDA_CHECK(cudaMalloc(&d_temp_sum_y, width * height * sizeof(float)));
+
+
             // Allocate output buffer
             CUDA_CHECK(cudaMalloc(&d_output, width * height * sizeof(unsigned char)));
 
@@ -272,8 +343,17 @@ namespace gpu {
             dim3 grid((width + block.x - 1) / block.x,
                      (height + block.y - 1) / block.y);
 
-            sobel_kernel<<<grid, block>>>(tex_input, d_output, width, height, 
+            LOG(DEBUG, "Calling sobel_kernel with width: {}, height: {},"
+                       " dx: {}, dy: {}, kernel_size: {}", width, height, 
                                         dx, dy, kernel_size);
+
+            sobel_horizontal<<<grid, block>>>(tex_input, d_temp_sum_x, 
+                                            d_temp_sum_y, width, height, 
+                                            kernel_size, dx, dy);
+            CUDA_CHECK(cudaGetLastError());
+
+            sobel_vertical<<<grid, block>>>(d_temp_sum_x, d_temp_sum_y, d_output, 
+                                            width, height, kernel_size, dx, dy);
             CUDA_CHECK(cudaGetLastError());
             CUDA_CHECK(cudaDeviceSynchronize());
 
