@@ -23,6 +23,7 @@ namespace {
     // CUDA-related constants
     // Preset CUDA Kernel block size (16 x 16)
     constexpr uint32_t KERNEL_BLK_DIM = 16;
+
     // Separate constant memory arrays for each kernel size
     __constant__ float d_kernel_deriv_3[3];
     __constant__ float d_kernel_deriv_5[5];
@@ -105,7 +106,8 @@ namespace {
         LOG_NNL(DEBUG, "]\n");
     }
 
-    // Sobel kernel implemented using CUDA Texture and separable convolution
+    // Sobel kernels implemented using CUDA Texture and separable convolution
+    // This kernel performs the horizontal pass
     __global__ void sobel_horizontal(cudaTextureObject_t tex_input,
                                    float* temp_sum_x, float* temp_sum_y,
                                    int width, int height, int kernel_size,
@@ -139,6 +141,8 @@ namespace {
 
     }
 
+    // Sobel kernels implemented using CUDA Texture and separable convolution
+    // This kernel performs the horizontal pass
     __global__ void sobel_vertical(float* temp_sum_x, float* temp_sum_y,
                                  unsigned char* output, int width, int height,
                                  int kernel_size, int dx, int dy) {

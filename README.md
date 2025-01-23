@@ -298,7 +298,7 @@ python3 ./scripts/benchmark_edge_detect.py <path/to/input_images> benchmark_resu
 
 This runs sobel edge detection and stores resulting images in ``benchmark_results`` and ``benchmark_results.csv`` in the current directory.
 
-Results suggest **3-5X** improvement in runtimes when comparing GPU runtimes with CPU on images between 1 MB - 30 MB. The speedup is **8-12X** for very large images (30+ MB).
+Results suggest **3-5X** improvement in runtimes when comparing GPU runtimes with CPU on larger images (1+ MB). 
 
 ### Benchmark Summary
 
@@ -316,12 +316,12 @@ After benchmarking on images of different dimensions (w x h).
 **Mean Speedup by Image Size:**:
 | Image Dims   | Image Size     | Speedup factor |
 |--------------|----------------|----------------|
-|960 x 640     | 38 KB          | 1.066          |
-|2048 x 2048   | 3.6 MB         | 5.514          |
+|960 x 640     | 38 KB          | 1.091          |
+|2048 x 2048   | 3.6 MB         | 3.015          |
 |2400 x 2400   | 6 MB           | 4.060          |
-|3600 x 3600   | 49 KB (gray)   | 4.337          |
-|6200 x 6200   | 26.7 MB        | 8.281          |
-|11472 x 6429  | 93 MB          | 12.940         |
+|3600 x 3600   | 49 KB (gray)   | 1.122          |
+|6200 x 6200   | 26.7 MB        | 3.706          |
+|11472 x 6429  | 93 MB          | 3.745          |
 
 ## Credits
 
