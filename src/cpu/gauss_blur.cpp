@@ -8,8 +8,8 @@
 #include <iostream>
 #include <numeric>
 namespace {
-    constexpr uint32_t MIN_KERNEL_SIZE = 3;
-    constexpr uint32_t MAX_KERNEL_SIZE = UINT32_MAX >> 2;
+    constexpr int MIN_KERNEL_SIZE = 3;
+    constexpr int MAX_KERNEL_SIZE = UINT32_MAX >> 2;
 
     std::vector<float> create_gaussian_kernel(int size, float sigma) {
         std::vector<float> kernel(size);
@@ -95,7 +95,8 @@ namespace {
 
 namespace cpu {
     Image gaussian_blur(const Image& input, int kernel_size, float sigma) {
-        LOG(DEBUG, "CPU: Starting Gaussian blur.");
+        LOG(DEBUG, "CPU: Starting Gaussian blur with ksize: {}, sigma: {}", 
+                    kernel_size, sigma);
         // Validate kernel size
         if (kernel_size % 2 == 0) {
             LOG(ERROR, "Kernel size must be odd");
@@ -104,7 +105,7 @@ namespace cpu {
         if (kernel_size < MIN_KERNEL_SIZE || kernel_size > MAX_KERNEL_SIZE) {
             // TODO: Test larger kernel size and enable if possible
             LOG(ERROR, "Kernel size supported: 3x3 up to {}x{}", MAX_KERNEL_SIZE, MAX_KERNEL_SIZE);
-            throw std::invalid_argument("Kernel size supported: 3x3 up to " + MAX_KERNEL_SIZE);
+            throw std::invalid_argument("Kernel size supported: 3x3 up to max image width x height");
         }
 
         // Set default sigma based on kernel size if not specified.
