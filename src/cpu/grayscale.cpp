@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <numeric>
+#include <cstring>
 
 /**
  * @namespace cpu
@@ -35,6 +36,11 @@ namespace cpu {
     Image grayscale(const Image& input) {
         LOG(DEBUG, "CPU: Starting Grayscale conversion.");
         // TODO: Remove throw and return error code instead.
+
+        if (input.channels() != 1 && input.channels() != 3) {
+            LOG(ERROR, "Input image must have 1 or 3 channels");
+            throw std::runtime_error("Input image must have 1 or 3 channels");
+        }
                 
         Image output(input.width(), input.height(), 1);
         const auto size = input.width() * input.height();
@@ -46,10 +52,17 @@ namespace cpu {
 
         if (input.channels() == 1){
             LOG(WARN, "Input image has only 1 channel. Is it already grayscale?");
-            std::for_each(std::execution::par_unseq, indices.begin(), indices.end(),
-                [in_data, out_data, channels = input.channels()](int i) {
-                    out_data[i] = in_data[i];
-                });
+            // For grayscale input, just copy the data
+            input.processTiles(
+                [](const unsigned char* in, unsigned char* out,
+                   uint32_t width, uint32_t height, uint32_t stride, uint32_t) {
+                    // Process each row of the tile
+                    for (uint32_t y = 0; y < height; ++y) {
+                        std::memcpy(out + y * stride, 
+                                  in + y * stride, 
+                                  width);
+                    }
+                }, output);
             return output;
 
         }else if(input.channels() != 3) {

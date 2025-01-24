@@ -9,6 +9,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <execution>
 
 /**
  * @class Image
@@ -131,12 +132,52 @@ public:
      */
     bool save(const std::string& filename) const;
 
+    template<typename F>
+    void processTiles(F&& processor, Image& output) const {
+    // Calculate number of tiles needed
+    const uint32_t numTilesX = (m_width + TILE_SIZE - 1) / TILE_SIZE;
+    const uint32_t numTilesY = (m_height + TILE_SIZE - 1) / TILE_SIZE;
+    const size_t totalTiles = numTilesX * numTilesY;
+
+    // Create indices for parallel processing
+    std::vector<size_t> tileIndices(totalTiles);
+    std::iota(tileIndices.begin(), tileIndices.end(), 0);
+
+    // Process tiles in parallel
+    std::for_each(std::execution::par_unseq, 
+        tileIndices.begin(), tileIndices.end(),
+        [&](size_t idx) {
+            // Calculate tile position
+            const uint32_t ty = idx / numTilesX;
+            const uint32_t tx = idx % numTilesX;
+            
+            // Calculate tile dimensions (handling edge tiles)
+            const uint32_t x = tx * TILE_SIZE;
+            const uint32_t y = ty * TILE_SIZE;
+            const uint32_t w = std::min(TILE_SIZE, m_width - x);
+            const uint32_t h = std::min(TILE_SIZE, m_height - y);
+            
+            // Calculate memory offsets for input and output
+            const size_t inOffset = (y * m_width + x) * m_channels;
+            const size_t outOffset = (y * m_width + x) * output.channels();
+            
+            // Process this tile
+            processor(m_data.get() + inOffset,
+                     output.data() + outOffset,
+                     w, h, m_width, output.channels());
+        });
+    }   
 
 private:
     uint32_t m_width{0};
     uint32_t m_height{0};
     uint8_t m_channels{0};
     std::unique_ptr<unsigned char[]> m_data;
+
+    // Tiling related members
+    // TODO: Adjust based on benchmarking
+    static constexpr uint32_t TILE_SIZE = 1024;
+
 };
 
 #endif // IMAGE_H

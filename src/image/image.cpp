@@ -9,6 +9,8 @@
 #include "logging/logging.h"
 #include <stdexcept>
 #include <iostream>
+#include <execution>
+
 
 // Fix max width and height of images
 constexpr const int MAX_WH = UINT32_MAX >> 2;
