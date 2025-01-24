@@ -1,6 +1,6 @@
 /**
  * @file gauss_blur.h
- * @brief Interface to perform Gaussian Blur CPU.
+ * @brief Interface to perform Gaussian Blur on CPU.
 */
 #ifndef GAUSS_BLUR_H
 #define GAUSS_BLUR_H

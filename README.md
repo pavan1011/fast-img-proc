@@ -229,7 +229,7 @@ python3 -m pip install pytest
 
 ### Configure Build with Testing Enabled
 ```
-cmake -DCMAKE_BUILD_TYPE=<build-type> -DBUILD_TESTS=ON -DPYTHON_EXECUTABLE=<path-to-python> -DUSE_CUDA=ON -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc -S ../ -B .
+cmake -DBUILD_TESTS=ON .. <other CMake options>
 ```
 
 ### Build Tests
@@ -279,9 +279,11 @@ This will generate detailed documentation which can be viewed by opening ```path
 ### Build ALL
 
 ```bash
-cmake -DCMAKE_BUILD_TYPE=<build-type> -DUSE_CUDA=ON -DPYTHON_EXECUTABLE=<path-to-python> -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc  -DBUILD_DOCUMENTATION=ON -S ../ -B .
-
+cmake -DCMAKE_BUILD_TYPE=<build-type> -DUSE_CUDA=ON -DPYTHON_EXECUTABLE=<path-to-python> -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-12 -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc -DBUILD_TESTS=ON -DBUILD_DOCUMENTATION=ON -S ../ -B .
+```
+```bash
 cmake --build .
+cmake --build . --target docs
 ```
 ## Benchmark comparing CPU vs GPU Implementation
 

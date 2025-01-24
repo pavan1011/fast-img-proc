@@ -12,8 +12,8 @@ namespace cpu {
     /**
      * Converts an image to grayscale using the CPU.
      *
-     * @param input The input image of type Image::Image (must be 1 or 3 channels).
-     * @return A grayscale version of the input image.
+     * @param input The input image of type Image (must be 1 or 3 channels).
+     * @return A grayscale version of the input Image containing 1 channel.
      */
     Image grayscale(const Image& input);
 
