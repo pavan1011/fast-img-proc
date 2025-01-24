@@ -5,6 +5,7 @@
 #include "cpu/hist_equalize.h"
 #include "cpu/sobel_edge_detect.h"
 #include <memory>
+#include <iostream>
 
 class CPUInternalTest : public ::testing::Test {
 protected:
@@ -63,9 +64,9 @@ TEST_F(CPUInternalTest, GaussBlur) {
     ASSERT_EQ(result.height(), gray_image->height());
     
     // Test kernel size validation
-     // Even kernel size
-    EXPECT_THROW(cpu::gaussian_blur(*gray_image, 2, 0), std::invalid_argument); 
-     // Negative kernel size
+    // Even kernel size
+    EXPECT_THROW(cpu::gaussian_blur(*gray_image, 4, 0), std::invalid_argument);
+    // Negative kernel size
     EXPECT_THROW(cpu::gaussian_blur(*gray_image, -1, 0), std::invalid_argument);
 }
 
