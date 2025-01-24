@@ -10,7 +10,11 @@
 #include <stdexcept>
 #include <iostream>
 #include <execution>
-
+#include <numeric>
+#include <filesystem>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 // Fix max width and height of images
 constexpr const int MAX_WH = UINT32_MAX >> 2;
@@ -68,3 +72,6 @@ bool Image::save(const std::string& filepath) const {
     }
     return false;
 }
+
+
+

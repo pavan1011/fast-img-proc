@@ -10,6 +10,18 @@
 #include <memory>
 #include <vector>
 #include <execution>
+#include <unordered_map>
+#include <cstdint>
+#include <filesystem>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
+// Forward declarations
+class Image; 
+namespace cpu {
+    Image grayscale(const Image&);
+}
 
 /**
  * @class Image
@@ -166,18 +178,77 @@ public:
                      output.data() + outOffset,
                      w, h, m_width, output.channels());
         });
-    }   
+    }
+
+protected:
+    struct Tile {
+        uint32_t x, y;           // Tile position
+        uint32_t width, height;  // Tile dimensions
+        std::unique_ptr<unsigned char[]> data;
+    };
 
 private:
     uint32_t m_width{0};
     uint32_t m_height{0};
     uint8_t m_channels{0};
+    // For small images: direct memory
     std::unique_ptr<unsigned char[]> m_data;
 
     // Tiling related members
     // TODO: Adjust based on benchmarking
     static constexpr uint32_t TILE_SIZE = 1024;
+    static constexpr size_t MAX_CACHED_TILES = 16;
+    static constexpr size_t MAX_DIRECT_MEMORY = 64 * 1024 * 1024; // 64MB
 
+    // For large images: memory mapped file and tile cache
+    class MemoryMappedFile {
+    public:
+        MemoryMappedFile(const std::string& filepath) {
+            m_fd = open(filepath.c_str(), O_RDONLY);
+            if (m_fd == -1) {
+                throw std::runtime_error("Failed to open file: " + filepath);
+            }
+
+            m_size = std::filesystem::file_size(filepath);
+            m_data = static_cast<unsigned char*>(
+                mmap(nullptr, m_size, PROT_READ, MAP_PRIVATE, m_fd, 0));
+            
+            if (m_data == MAP_FAILED) {
+                close(m_fd);
+                throw std::runtime_error("Failed to memory map file: " + filepath);
+            }
+        }
+
+        ~MemoryMappedFile() {
+            if (m_data != MAP_FAILED) {
+                munmap(m_data, m_size);
+            }
+            if (m_fd != -1) {
+                close(m_fd);
+            }
+        }
+
+        unsigned char* data() { return m_data; }
+        const unsigned char* data() const { return m_data; }
+        size_t size() const { return m_size; }
+
+    private:
+        int m_fd{-1};
+        unsigned char* m_data{nullptr};
+        size_t m_size{0};
+    };
+    std::unique_ptr<MemoryMappedFile> m_mapped_file;
+    mutable std::unordered_map<uint64_t, Tile> m_tile_cache;
+
+    // Tile management
+    Tile getTile(uint32_t x, uint32_t y) const;
+    void writeTile(const Tile& tile);
+    uint64_t calculateTileKey(uint32_t x, uint32_t y) const;
+    void clearOldestCachedTile() const;
+    bool isLargeImage() const;
+
+    // Friend declarations
+    friend Image cpu::grayscale(const Image&);
 };
 
 #endif // IMAGE_H
