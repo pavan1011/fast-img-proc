@@ -17,6 +17,7 @@ INPUT                 = @CMAKE_SOURCE_DIR@/README.md @CMAKE_SOURCE_DIR@/include 
 FILE_PATTERNS         = *.h *.cpp *.cu *.cuh
 RECURSIVE             = YES
 EXCLUDE_PATTERNS      = */build/* */test/*
+EXTENSION_MAPPING     = cu=C++ cuh=C++
 
 # Output settings
 GENERATE_HTML         = YES
