@@ -104,8 +104,8 @@ public:
      * 
      * Returns a pointer to the first byte of the image data array.
      * The data is stored as a contiguous array of unsigned chars where:
-     * - For RGB images (3 channels), pixels are stored sequentially channel-wise as:
-     *   [R1,R2,R3, ..., G1,G2,G2, ... B1,B2,B3,...]
+     * - For RGB images (3 channels), pixels are stored sequentially as R,G,B values:
+     *   [R1,G1,B1, R2,G2,B2, R3,G3,B3, ...] for each pixel
      * - For Grayscale images (1 channel), each byte represents one pixel intensity
      * - Total size of data = width * height * channels
      * 

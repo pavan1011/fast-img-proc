@@ -1,3 +1,7 @@
+/**
+ * @file processor.cpp
+ * @brief Implementation of hardware-agnostic image processing interface
+ */
 #include "processing/processor.h"
 #include "cpu/grayscale.h"
 #include "cpu/hist_equalize.h"
@@ -8,6 +12,12 @@
 #include <iostream>
 
 namespace processing {
+    /**
+     * @brief Checks if GPU processing is available
+     * @return true if CUDA is enabled and GPU is available
+     * 
+     * Checks both compile-time CUDA support and runtime GPU availability
+     */
     bool is_gpu_available() {
         #ifdef USE_CUDA
         return gpu::is_available();
@@ -16,10 +26,24 @@ namespace processing {
         #endif
     }
 
+    /**
+     * @brief Gets currently active processing hardware
+     * @return Hardware::GPU if available, otherwise Hardware::CPU
+     */
     Hardware get_active_hardware() {
         return is_gpu_available() ? Hardware::GPU : Hardware::CPU;
     }
 
+    /**
+     * @brief Resolves requested hardware to actually available hardware
+     * @param requested The requested hardware configuration
+     * @return Resolved hardware (may fall back to CPU if GPU unavailable)
+     * 
+     * Resolution rules:
+     * - AUTO: Uses best available hardware
+     * - GPU: Falls back to CPU if GPU unavailable
+     * - CPU: Always honored
+     */
     Hardware resolve_hardware(Hardware requested) {
         if (requested == Hardware::AUTO) {
             return get_active_hardware();
@@ -33,6 +57,14 @@ namespace processing {
         return requested;
     }
 
+    /**
+     * @brief Converts image to grayscale using specified hardware
+     * @param input Source image
+     * @param hardware Target processing hardware
+     * @return Grayscale image
+     * @throws std::runtime_error if invalid hardware specified
+     * @note GPU implementation not yet available, falls back to CPU
+     */
     Image grayscale(const Image& input, Hardware hardware) {
         hardware = resolve_hardware(hardware);
         
@@ -55,6 +87,14 @@ namespace processing {
         }
     }
 
+    /**
+     * @brief Performs histogram equalization using specified hardware
+     * @param input Source image
+     * @param hardware Target processing hardware
+     * @return Equalized image
+     * @throws std::runtime_error if invalid hardware specified
+     * @note GPU implementation not yet available, falls back to CPU
+     */
     Image equalize_histogram(const Image& input, Hardware hardware) {
         hardware = resolve_hardware(hardware);
 
@@ -77,6 +117,16 @@ namespace processing {
         }
     }
 
+    /**
+     * @brief Applies Gaussian blur using specified hardware
+     * @param input Source image
+     * @param kernel_size Blur kernel size
+     * @param sigma Gaussian standard deviation
+     * @param hardware Target processing hardware
+     * @return Blurred image
+     * @throws std::runtime_error if invalid hardware specified
+     * @note GPU implementation not yet available, falls back to CPU
+     */
     Image blur(const Image& input, int kernel_size, float sigma, Hardware hardware) {
         hardware = resolve_hardware(hardware);
 
@@ -98,6 +148,21 @@ namespace processing {
         }
     }
 
+    /**
+     * @brief Performs Sobel edge detection using specified hardware
+     * @param input Source image
+     * @param dx X derivative order
+     * @param dy Y derivative order
+     * @param kernel_size Sobel kernel size
+     * @param hardware Target processing hardware
+     * @return Edge detection result
+     * @throws std::runtime_error if invalid hardware specified
+     * 
+     * GPU processing behavior:
+     * - Attempts GPU processing if CUDA is enabled
+     * - Falls back to CPU on GPU processing failure
+     * - Falls back to CPU if CUDA not compiled
+     */
     Image edge_detect(const Image& input, int dx, int dy,
                             int kernel_size, Hardware hardware) {
         hardware = resolve_hardware(hardware);

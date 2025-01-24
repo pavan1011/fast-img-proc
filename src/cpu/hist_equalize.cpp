@@ -1,3 +1,7 @@
+/**
+ * @file hist_equalize.cpp
+ * @brief CPU implementation of histogram equalization and color space conversions
+ */
 #include "cpu/hist_equalize.h"
 #include <logging/logging.h>
 #include <vector>
@@ -8,6 +12,18 @@
 #include <numeric>
 
 namespace cpu {
+    /**
+     * @brief Converts RGB image to YCrCb color space
+     * 
+     * Uses ITU-R BT.601 standard with parallel processing:
+     * - Y  = 0.299R + 0.587G + 0.114B
+     * - Cr = 128 + (R-Y) * 0.713
+     * - Cb = 128 + (B-Y) * 0.564
+     * 
+     * @param input RGB image with 3 channels
+     * @return YCrCb image with same dimensions
+     * @throws std::runtime_error if input doesn't have 3 channels
+     */
     Image rgb_to_ycrcb(const Image& input) {
         if (input.channels() != 3) {
             LOG(ERROR, "Only 3 channels (RGB) supported as color input image for "
@@ -44,6 +60,18 @@ namespace cpu {
         return output;
     }
 
+    /**
+     * @brief Converts YCrCb image back to RGB color space
+     * 
+     * Inverse BT.601 conversion with parallel processing:
+     * - R = Y + 1.403Cr
+     * - G = Y - 0.344Cb - 0.714Cr
+     * - B = Y + 1.773Cb
+     * 
+     * @param input YCrCb image with 3 channels
+     * @return RGB image with same dimensions
+     * @throws std::runtime_error if input doesn't have 3 channels
+     */
     Image ycrcb_to_rgb(const Image& input) {
         if (input.channels() != 3) {
             LOG(ERROR, "Only 3 channels (RGB) supported as color input image for "
@@ -80,6 +108,22 @@ namespace cpu {
         return output;
     }
 
+    /**
+     * @brief Equalizes a single channel using histogram equalization
+     * 
+     * Implementation steps:
+     * 1. Calculate histogram
+     * 2. Compute cumulative distribution function (CDF)
+     * 3. Find minimum non-zero CDF value
+     * 4. Create lookup table using equalization formula
+     * 5. Apply lookup table in parallel
+     * 
+     * @param data Pointer to image data
+     * @param size Total number of pixels * stride
+     * @param stride Step size between pixels to access pixels from 
+     *        individual channels (default=1)
+     * @throws std::invalid_argument if invalid parameters provided
+     */
     void equalize_channel(unsigned char* data, size_t size, size_t stride) {
 
         // TODO: Replace throw with returning error code.
@@ -131,6 +175,7 @@ namespace cpu {
         // Formula: h(v) = round((cdf(v) - cdf_min) * (L-1)/(M*N - cdf_min))
         // where L is number of gray levels (256), M*N is image size
         std::vector<unsigned char> lut(256);
+        // scale = (L-1)/(M*N - cdf_min)
         float scale = 255.0f / ((size/stride) - cdf_min);
         for (int i = 0; i < 256; ++i) {
             lut[i] = static_cast<unsigned char>(

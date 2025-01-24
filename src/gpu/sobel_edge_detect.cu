@@ -1,3 +1,7 @@
+/**
+ * @file sobel_edge_detect.cu
+ * @brief CUDA implementation of Sobel edge detection using texture memory and separable convolution
+ */
 #include "gpu/sobel_edge_detect.cuh"
 #include "cpu/grayscale.h"
 #include "logging/logging.h"
@@ -21,18 +25,21 @@
 
 namespace {
 
-    // Preset CUDA Kernel block size (16 x 16)
-    // Chosen after benchmarking with BLK_DIM =8(min), 16,and 32(max)
+    /** @brief Block dimension for CUDA kernels (16x16 threads) */
+    // Chosen after benchmarking with KERNEL_BLK_DIM =8(min), 16,and 32(max)
     constexpr uint32_t KERNEL_BLK_DIM = 16;
 
-    // Separate constant memory arrays for each kernel size
+    /** @brief Constant memory arrays for derivative kernels */
     __constant__ float d_kernel_deriv_3[3];
     __constant__ float d_kernel_deriv_5[5];
     __constant__ float d_kernel_deriv_7[7];
+
+    /** @brief Constant memory arrays for smoothing kernels */
     __constant__ float d_kernel_smooth_3[3];
     __constant__ float d_kernel_smooth_5[5];
     __constant__ float d_kernel_smooth_7[7];
 
+    /** @brief Normalization factors for different kernel sizes */
     // Normalization factor = SUM of smoothing kernel values.
     constexpr uint8_t NORM_FACTOR_3 = 4;
     constexpr uint8_t NORM_FACTOR_5 = 16;
@@ -49,7 +56,12 @@ namespace {
     constexpr std::array<float, 5> smooth_5 = {1.f, 4.f, 6.f, 4.f, 1.f};
     constexpr std::array<float, 7> smooth_7 = {1.f, 6.f, 15.f, 20.f, 15.f, 6.f, 1.f};
 
-    // Get kernel based on order of derivative and kernel size
+    /**
+     * @brief Gets appropriate kernel based on derivative order and size
+     * @param derivative_order Order of derivative (0 for smoothing, 1 for gradient)
+     * @param kernel_size Size of kernel (3, 5, or 7)
+     * @return Pointer to kernel data
+     */
     const float* get_kernel(int derivative_order, int kernel_size) {
         if (derivative_order == 0) {
             switch(kernel_size) {
@@ -68,7 +80,11 @@ namespace {
         }
     }
 
-    // Get normalization factor based on kernel size
+    /**
+     * @brief Gets normalization factor for gradient magnitude
+     * @param kernel_size Size of the kernel
+     * @return Normalization factor
+     */
     __device__ float get_norm_factor(int kernel_size) {
         switch(kernel_size) {
             case 3: return NORM_FACTOR_3;
@@ -78,7 +94,12 @@ namespace {
         }
     }
 
-    // Helper function to get appropriate device kernel pointer
+    /**
+     * @brief Gets pointer to appropriate device kernel in constant memory
+     * @param derivative_order Order of derivative (0 or 1)
+     * @param kernel_size Size of kernel (3, 5, or 7)
+     * @return Pointer to device kernel
+     */
     __device__ const float* get_device_kernel(int derivative_order, int kernel_size) {
         if (derivative_order == 0) {
             switch(kernel_size) {
@@ -107,9 +128,17 @@ namespace {
         LOG_NNL(DEBUG, "]\n");
     }
 
-    // Sobel kernels implemented using CUDA Texture and separable convolution
-    // sobel_horizontal() performs the horizontal convolution: applies smoothing 
-    // or derivative kernel depending on dx and dy
+    /**
+     * @brief Performs horizontal pass of separable Sobel convolution
+     * @param tex_input Texture object containing input image
+     * @param temp_sum_x Temporary buffer for X gradient calculation
+     * @param temp_sum_y Temporary buffer for Y gradient calculation
+     * @param width Image width
+     * @param height Image height
+     * @param kernel_size Size of Sobel kernel
+     * @param dx X derivative order (0=smoothing, 1=gradient)
+     * @param dy Y derivative order (0=smoothing, 1=gradient)
+     */
     __global__ void sobel_horizontal(cudaTextureObject_t tex_input,
                                    float* temp_sum_x, float* temp_sum_y,
                                    int width, int height, int kernel_size,
@@ -149,7 +178,17 @@ namespace {
 
     }
 
-    // sobel_vertical() performs the vertical convolution and computes gradients
+    /**
+     * @brief Performs vertical pass and computes final gradients
+     * @param temp_sum_x Temporary buffer from X gradient calculation
+     * @param temp_sum_y Temporary buffer from Y gradient calculation
+     * @param output Output image buffer
+     * @param width Image width
+     * @param height Image height
+     * @param kernel_size Size of Sobel kernel
+     * @param dx X derivative order (0=smoothing, 1=gradient)
+     * @param dy Y derivative order (0=smoothing, 1=gradient)
+     */
     __global__ void sobel_vertical(float* temp_sum_x, float* temp_sum_y,
                                  unsigned char* output, int width, int height,
                                  int kernel_size, int dx, int dy) {
@@ -204,7 +243,12 @@ namespace {
             min(255.0f, max(0.0f, magnitude)));
     }
 
-    // Helper function to copy appropriate kernel to constant memory
+    /**
+     * @brief Copies kernel to appropriate constant memory location
+     * @param kernel Source kernel data
+     * @param kernel_size Size of kernel
+     * @param derivative_order Order of derivative (0 for smoothing, 1 for gradient)
+     */
     void copy_kernel_to_device(const float* kernel, int kernel_size, int derivative_order) {
         if (derivative_order == 0) {
             switch(kernel_size) {
@@ -245,14 +289,37 @@ namespace {
  * @brief GPU-accelerated image processing operations
  */
 namespace gpu {
-    // Helper function to check if CUDA device is available.
-    // Expose to processing.cpp via gpu namespace
+    /**
+     * @brief Checks if CUDA device is available
+     * @return true if CUDA device is present and initialized
+     */
+    // Exposed to processing.cpp via gpu namespace
     bool is_available() {
         int deviceCount = 0;
         cudaGetDeviceCount(&deviceCount);
         return deviceCount > 0;
     }
     
+    /**
+     * @brief Performs Sobel edge detection using CUDA
+     * 
+     * Implementation features:
+     * - Uses texture memory for efficient image access
+     * - Separable convolution for performance
+     * - Automatic grayscale conversion for color images
+     * - Configurable X and Y derivatives
+     * 
+     * @param input Source image
+     * @param dx Order of X derivative (0 or 1)
+     * @param dy Order of Y derivative (0 or 1)
+     * @param kernel_size Size of Sobel kernel (1, 3, 5, or 7)
+     * @return Single-channel image containing edge detection result
+     * 
+     * @throws std::runtime_error if CUDA device is not available
+     * @throws std::invalid_argument if parameters are invalid
+     * @note Uses kernel_size = 3 if kernel_size = 1 is passed 
+     *       (similar to OpenCV implementation)
+     */
     Image sobel_edge_detect(const Image& input, int dx, int dy, int kernel_size) {
         LOG(DEBUG, "GPU: Starting Sobel edge detection.");
         if (!is_available()) {

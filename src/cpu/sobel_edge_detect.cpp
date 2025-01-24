@@ -1,3 +1,7 @@
+/**
+ * @file sobel_edge_detect.cpp
+ * @brief CPU implementation of Sobel edge detection using separable convolution
+ */
 #include "cpu/sobel_edge_detect.h"
 #include "cpu/grayscale.h"
 #include <logging/logging.h>
@@ -11,8 +15,12 @@
 
 namespace {
     // Normalization factor = SUM of smoothing kernel values.
+
+    /** @brief Normalization factor for 3x3 kernel */
     constexpr uint8_t NORM_FACTOR_3 = 4;
+    /** @brief Normalization factor for 5x5 kernel */
     constexpr uint8_t NORM_FACTOR_5 = 16;
+    /** @brief Normalization factor for 7x7 kernel */
     constexpr uint8_t NORM_FACTOR_7 = 64;
 
     // Preset Sobel kernels
@@ -26,7 +34,11 @@ namespace {
     constexpr std::array<float, 5> smooth_5 = {1.f, 4.f, 6.f, 4.f, 1.f}; 
     constexpr std::array<float, 7> smooth_7 = {1.f, 6.f, 15.f, 20.f, 15.f, 6.f, 1.f};
     
-    // Get normalization factor based on kernel size
+    /**
+     * @brief Gets normalization factor based on kernel size
+     * @param kernel_size Size of the kernel (3, 5, or 7)
+     * @return Normalization factor for gradient magnitude
+     */
     float get_norm_factor(int kernel_size) {
         switch(kernel_size) {
             case 3: return NORM_FACTOR_3;
@@ -36,7 +48,12 @@ namespace {
         }
     }
 
-    // Get kernel based on order of derivative and kernel size
+     /**
+     * @brief Gets appropriate kernel based on derivative order and size
+     * @param derivative_order Order of derivative (0 for smoothing, 1 for gradient)
+     * @param kernel_size Size of kernel (3, 5, or 7)
+     * @return Pointer to kernel data, nullptr if invalid parameters
+     */
     const float* get_kernel(int derivative_order, int kernel_size) {
         if (derivative_order == 0) {
             switch(kernel_size) {
@@ -55,7 +72,12 @@ namespace {
         }
     }
 
-    // Helper function to print chosen kernel
+    /**
+     * @brief Logs kernel values for debugging
+     * @param kernel Pointer to kernel data
+     * @param size Size of kernel
+     * @param name Name of kernel for logging
+     */
     void print_kernel(const float* kernel, int size, const char* name) {
         LOG_NNL(DEBUG, "{}  (size {}): \n [",  name, size);
         for (int i = 0; i < size; ++i) {
@@ -65,7 +87,29 @@ namespace {
         LOG_NNL(DEBUG, "]\n");
     }
 
-    // Sobel operator implemented using separable convolution
+    /**
+     * @brief Applies Sobel operator using separable convolution
+     * 
+     * Implementation steps:
+     * 1. Horizontal pass:
+     *    - Applies derivative kernel for dx=1
+     *    - Applies smoothing kernel for dy=1
+     * 2. Vertical pass:
+     *    - Completes X-gradient with smoothing
+     *    - Completes Y-gradient with derivative
+     * 3. Computes gradient magnitude
+     * 
+     * @param input Source image data (grayscale)
+     * @param output Destination for edge detection result
+     * @param width Image width
+     * @param height Image height
+     * @param dx Order of X derivative (0 or 1)
+     * @param dy Order of Y derivative (0 or 1)
+     * @param kernel_size Size of Sobel kernel
+     * 
+     * @throws std::runtime_error if kernel generation fails
+     * @note Uses parallel execution via std::execution::par_unseq
+     */
     void apply_sobel(const unsigned char* input, unsigned char* output,
                     int width, int height, int dx, int dy, int kernel_size) {
         // Get appropriate kernels based on size
@@ -177,6 +221,28 @@ namespace {
 } // local namespace
 
 namespace cpu {
+    /**
+     * @brief Performs Sobel edge detection on an image
+     * 
+     * Supports:
+     * - First-order derivatives (dx, dy = 0 or 1)
+     * - Kernel sizes: 3x3, 5x5, 7x7 (1 defaults to 3x3)
+     * - Automatic grayscale conversion for color images
+     * 
+     * @param input Source image
+     * @param dx Order of X derivative (0 or 1)
+     * @param dy Order of Y derivative (0 or 1)
+     * @param kernel_size Size of Sobel kernel (1, 3, 5, or 7)
+     * @return Single-channel image containing edge detection result
+     * 
+     * @throws std::invalid_argument if:
+     * - dx or dy are not 0 or 1
+     * - Both dx and dy are 0
+     * - kernel_size is not 1, 3, 5, or 7
+     * - Image dimensions < kernel_size
+     * @note Uses kernel_size = 3 if kernel_size = 1 is passed 
+     *       (similar to OpenCV implementation)
+     */
     Image sobel_edge_detect(const Image& input, int dx, int dy, int kernel_size) {
         LOG(DEBUG, "CPU: Starting Sobel edge detection.");
         if (dx < 0 || dx > 1 || dy < 0 || dy > 1) {

@@ -1,3 +1,7 @@
+/**
+ * @file gauss_blur.cpp
+ * @brief CPU implementation of Gaussian blur using separable convolution
+ */
 #include "cpu/gauss_blur.h"
 #include "logging/logging.h"
 #include <vector>
@@ -8,9 +12,24 @@
 #include <iostream>
 #include <numeric>
 namespace {
+    /** @brief Minimum supported kernel size */
     constexpr int MIN_KERNEL_SIZE = 3;
+
+    /** @brief Maximum supported kernel size */
     constexpr int MAX_KERNEL_SIZE = UINT32_MAX >> 2;
 
+    /**
+     * @brief Creates 1D Gaussian kernel for separable convolution
+     * 
+     * Implements the Gaussian function:
+     * G(x) = exp(-(x^2)/(2*sigma^2))
+     * 
+     * @param size Kernel size (must be odd)
+     * @param sigma Standard deviation of Gaussian distribution
+     * @return Normalized 1D Gaussian kernel
+     * 
+     * @note Kernel values are logged at DEBUG level
+     */
     std::vector<float> create_gaussian_kernel(int size, float sigma) {
         std::vector<float> kernel(size);
         const int center = size / 2;
@@ -39,6 +58,25 @@ namespace {
         return kernel;
     }
 
+    /**
+     * @brief Applies separable Gaussian blur to a single channel
+     * 
+     * Implementation:
+     * 1. Applies horizontal 1D convolution
+     * 2. Stores results in temporary buffer
+     * 3. Applies vertical 1D convolution
+     * 4. Clamps results to [0,255]
+     * 
+     * @param input Source image data
+     * @param output Destination image data
+     * @param width Image width
+     * @param height Image height
+     * @param channels Number of color channels
+     * @param channel_offset Current channel being processed
+     * @param kernel 1D Gaussian kernel
+     * 
+     * @note Uses parallel execution via std::execution::par_unseq
+     */
     void apply_gaussian_blur(const unsigned char* input, unsigned char* output,
                             int width, int height, int channels, int channel_offset,
                             const std::vector<float>& kernel) {
@@ -94,6 +132,29 @@ namespace {
 } //local namespace
 
 namespace cpu {
+    /**
+     * @brief Performs Gaussian blur on an image
+     * 
+     * Uses separable convolution for efficiency:
+     * - 2D Gaussian filter is separated into two 1D convolutions
+     * - Each channel is processed independently
+     * - Border pixels are handled using clamp-to-edge strategy
+     * 
+     * Default sigma calculation (if sigma <= 0):
+     * sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 1.0
+     * 
+     * @param input Source image
+     * @param kernel_size Size of the Gaussian kernel (must be odd)
+     * @param sigma Standard deviation of Gaussian distribution
+     * @return Blurred image with same dimensions and channels
+     * 
+     * @throws std::invalid_argument if:
+     * - kernel_size is even
+     * - kernel_size < 3 or > MAX_KERNEL_SIZE
+     * - image dimensions < kernel_size
+     * 
+     * @note Processes each channel sequentially but pixels in parallel
+     */
     Image gaussian_blur(const Image& input, int kernel_size, float sigma) {
         LOG(DEBUG, "CPU: Starting Gaussian blur with ksize: {}, sigma: {}", 
                     kernel_size, sigma);

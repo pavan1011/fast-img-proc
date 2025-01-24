@@ -1,3 +1,8 @@
+/**
+ * @file grayscale.cpp
+ * @brief CPU implementation of grayscale conversion
+ */
+
 #include "cpu/grayscale.h"
 #include "logging/logging.h"
 #include <execution>
@@ -5,8 +10,28 @@
 #include <vector>
 #include <numeric>
 
+/**
+ * @namespace cpu
+ * @brief CPU implementations of image processing algorithms
+ */
 namespace cpu {
-
+    /**
+     * @brief Converts an RGB or grayscale image to grayscale using parallel processing
+     * 
+     * For RGB images, uses ITU-R BT.601 conversion formula:
+     * gray = 0.299R + 0.587G + 0.114B
+     * 
+     * Implementation details:
+     * - Uses parallel execution via std::execution::par_unseq
+     * - Leverages TBB library for parallelization
+     * - Performs data copy for single-channel images
+     * 
+     * @param input Source image (must be 1 or 3 channels)
+     * @return Single-channel grayscale image
+     * @throws std::runtime_error if input image has invalid number of channels
+     * 
+     * @note If input is already grayscale (1 channel), a copy is returned
+     */
     Image grayscale(const Image& input) {
         LOG(DEBUG, "CPU: Starting Grayscale conversion.");
         // TODO: Remove throw and return error code instead.
